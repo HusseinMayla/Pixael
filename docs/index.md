@@ -39,8 +39,11 @@ Before the deadline, ensure all 4 components are ready:
 ## 📑 Documentation Index
 
 - [**Submission Requirements & Project Rules**](file:///c:/Users/Abbas/dev/SpritesCanvas/docs/requirements_and_rules.md): Detailed rules on repos, licenses, videos, and existing vs new code.
-- [**WebMCP Architecture & Tool Spec**](file:///c:/Users/Abbas/dev/SpritesCanvas/docs/webmcp_spec_and_architecture.md): API signature, tool schemas, TypeScript definitions, and security guidelines.
+- [**Devpost Submission Narrative**](file:///c:/Users/Abbas/dev/SpritesCanvas/SUBMISSION_NARRATIVE.md): Official written narrative addressing the 4 mandatory prompt areas.
+- [**Demo & Judge Evaluation Walkthrough**](file:///c:/Users/Abbas/dev/SpritesCanvas/DEMO_WALKTHROUGH.md): Copy-pasteable WebMCP test scenarios and video script.
+- [**WebMCP Tool Reference**](file:///c:/Users/Abbas/dev/SpritesCanvas/WEBMCP_TOOL_REFERENCE.md): Full schema & contract for all 36 tools.
+- [**Technical Architecture & Project Docs**](file:///c:/Users/Abbas/dev/SpritesCanvas/DOCUMENTATION.md): Deep-dive system architecture.
 - [**Deployment & Testing Guide**](file:///c:/Users/Abbas/dev/SpritesCanvas/docs/deployment_and_testing.md): Hosting options (Cloudflare, Vercel, Netlify, Render) and browser testing environments.
-- [**Judging & Scoring Criteria**](file:///c:/Users/Abbas/dev/SpritesCanvas/docs/judging_criteria.md): The 4 evaluation pillars and how to score maximum points.
+- [**Judging & Scoring Criteria**](file:///c:/Users/Abbas/dev/SpritesCanvas/docs/judging_criteria.md): The 4 evaluation pillars and scoring rubric.
 - [**Developer Resources & Templates**](file:///c:/Users/Abbas/dev/SpritesCanvas/docs/resources_and_templates.md): Starter codebases, React hooks, Chrome labs demos, and official documentation.
 - [**Technical FAQ & AI Usage**](file:///c:/Users/Abbas/dev/SpritesCanvas/docs/faq.md): Practical answers on repositories, hosting, auth, and AI assistance.

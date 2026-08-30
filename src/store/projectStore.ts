@@ -60,6 +60,12 @@ interface ProjectStoreState {
   flipCurrentFrame: (direction: 'horizontal' | 'vertical') => void;
   rotateCurrentFrame: (clockwise?: boolean) => void;
   shiftCurrentFrame: (dx: number, dy: number) => void;
+  updateTargetFramePixels: (
+    assetId: string,
+    stateId: string,
+    frameIdentifier: { frameId?: string; frameIndex?: number },
+    updater: (currentPixels: string[], asset: SpriteAsset) => string[]
+  ) => { frame: FrameData; asset: SpriteAsset; state: AnimationState };
 
   // Palette Domain Operations
   setPalette: (assetId: string, colors: string[]) => void;
@@ -849,6 +855,57 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
 
     set({ project: updatedProject });
     debounceSave(updatedProject, (isSaving, lastSaved) => set({ isSaving, lastSaved }));
+  },
+
+  updateTargetFramePixels: (assetId, stateId, frameIdentifier, updater) => {
+    const { project, pushHistory } = get();
+    const asset = project.assets.find(a => a.id === assetId);
+    if (!asset) throw new Error(`Asset not found: ${assetId}`);
+
+    const state = asset.states.find(s => s.id === stateId);
+    if (!state) throw new Error(`State not found: ${stateId} in asset ${asset.name}`);
+
+    let frameIdx = 0;
+    if (frameIdentifier.frameId) {
+      const idx = state.frames.findIndex(f => f.id === frameIdentifier.frameId);
+      if (idx < 0) throw new Error(`Frame ID not found: ${frameIdentifier.frameId}`);
+      frameIdx = idx;
+    } else if (frameIdentifier.frameIndex !== undefined) {
+      if (frameIdentifier.frameIndex < 0 || frameIdentifier.frameIndex >= state.frames.length) {
+        throw new Error(`Frame index ${frameIdentifier.frameIndex} out of bounds (0-${state.frames.length - 1})`);
+      }
+      frameIdx = frameIdentifier.frameIndex;
+    }
+
+    const currentFrame = state.frames[frameIdx];
+    if (!currentFrame) throw new Error('Target frame not found');
+
+    pushHistory();
+
+    const newPixels = updater(currentFrame.pixels, asset);
+    if (!Array.isArray(newPixels) || newPixels.length !== asset.width * asset.height) {
+      throw new Error(`Invalid pixel buffer returned by updater: expected length ${asset.width * asset.height}, got ${newPixels?.length}`);
+    }
+
+    const updatedFrame: FrameData = { ...currentFrame, pixels: newPixels };
+    const updatedFrames = state.frames.map((f, i) => (i === frameIdx ? updatedFrame : f));
+    const updatedState = { ...state, frames: updatedFrames };
+    const updatedAsset = {
+      ...asset,
+      states: asset.states.map(s => (s.id === stateId ? updatedState : s)),
+      updatedAt: Date.now(),
+    };
+
+    const updatedProject = {
+      ...project,
+      assets: project.assets.map(a => (a.id === assetId ? updatedAsset : a)),
+      savedAt: Date.now(),
+    };
+
+    set({ project: updatedProject });
+    debounceSave(updatedProject, (isSaving, lastSaved) => set({ isSaving, lastSaved }));
+
+    return { frame: updatedFrame, asset: updatedAsset, state: updatedState };
   },
 
   // -------------------------------------------------------------

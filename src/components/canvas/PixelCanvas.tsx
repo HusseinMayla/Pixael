@@ -136,20 +136,15 @@ export const PixelCanvas: React.FC = () => {
     shapePreview,
   ]);
 
-  // Wheel zoom and pan handler (Zero latency)
+  // Wheel zoom handler (Scroll UP = Zoom OUT, Scroll DOWN = Zoom IN)
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
-    if (e.ctrlKey || e.metaKey) {
-      const delta = e.deltaY < 0 ? 2 : -2;
-      setZoom((z) => Math.max(4, Math.min(64, z + delta)));
-    } else if (Math.abs(e.deltaX) > 0 || Math.abs(e.deltaY) > 0) {
-      // Standard mouse wheel steps zoom, trackpad 2-finger scrolls pan
-      if (Math.abs(e.deltaX) === 0 && Math.abs(e.deltaY) >= 40) {
-        const delta = e.deltaY < 0 ? 2 : -2;
-        setZoom((z) => Math.max(4, Math.min(64, z + delta)));
-      } else {
-        setPan(panX - e.deltaX, panY - e.deltaY);
-      }
+    if (e.deltaY < 0) {
+      // Scroll UP -> Zoom OUT
+      setZoom((z) => Math.max(4, z - 2));
+    } else if (e.deltaY > 0) {
+      // Scroll DOWN -> Zoom IN
+      setZoom((z) => Math.min(64, z + 2));
     }
   };
 

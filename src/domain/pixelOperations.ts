@@ -210,3 +210,95 @@ export function resizePixels(
 
   return newPixels;
 }
+
+export function drawLineInPixels(
+  pixels: string[],
+  width: number,
+  height: number,
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number,
+  color: string
+): { newPixels: string[]; pointsDrawn: number } {
+  const newPixels = [...pixels];
+  const dx = Math.abs(x1 - x0);
+  const dy = Math.abs(y1 - y0);
+  const sx = x0 < x1 ? 1 : -1;
+  const sy = y0 < y1 ? 1 : -1;
+  let err = dx - dy;
+
+  let currX = x0;
+  let currY = y0;
+  let pointsDrawn = 0;
+
+  while (true) {
+    if (currX >= 0 && currX < width && currY >= 0 && currY < height) {
+      newPixels[currY * width + currX] = color;
+      pointsDrawn++;
+    }
+    if (currX === x1 && currY === y1) break;
+    const e2 = 2 * err;
+    if (e2 > -dy) {
+      err -= dy;
+      currX += sx;
+    }
+    if (e2 < dx) {
+      err += dx;
+      currY += sy;
+    }
+  }
+
+  return { newPixels, pointsDrawn };
+}
+
+export function drawRectangleInPixels(
+  pixels: string[],
+  width: number,
+  height: number,
+  x: number,
+  y: number,
+  rectW: number,
+  rectH: number,
+  color: string,
+  filled = false
+): { newPixels: string[]; pointsDrawn: number } {
+  const newPixels = [...pixels];
+  let pointsDrawn = 0;
+
+  const minX = Math.min(x, x + rectW - 1);
+  const maxX = Math.max(x, x + rectW - 1);
+  const minY = Math.min(y, y + rectH - 1);
+  const maxY = Math.max(y, y + rectH - 1);
+
+  for (let cy = minY; cy <= maxY; cy++) {
+    for (let cx = minX; cx <= maxX; cx++) {
+      if (cx >= 0 && cx < width && cy >= 0 && cy < height) {
+        const isBorder = cx === minX || cx === maxX || cy === minY || cy === maxY;
+        if (filled || isBorder) {
+          newPixels[cy * width + cx] = color;
+          pointsDrawn++;
+        }
+      }
+    }
+  }
+
+  return { newPixels, pointsDrawn };
+}
+
+export function rotatePixelsByDegrees(
+  pixels: string[],
+  width: number,
+  height: number,
+  degrees: number
+): string[] {
+  const normalized = ((degrees % 360) + 360) % 360;
+  if (normalized === 0) return [...pixels];
+  if (normalized === 90) return rotatePixels(pixels, width, height, true);
+  if (normalized === 180) {
+    const once = rotatePixels(pixels, width, height, true);
+    return rotatePixels(once, width, height, true);
+  }
+  if (normalized === 270) return rotatePixels(pixels, width, height, false);
+  throw new Error(`Unsupported rotation degrees: ${degrees}. Supported: 90, 180, 270`);
+}

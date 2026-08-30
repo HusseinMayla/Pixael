@@ -53,8 +53,8 @@ export const NewAssetModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-studio-900 border border-studio-700/80 w-full max-w-lg rounded-xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
+      <div className="bg-studio-900 border border-studio-700/80 w-full max-w-lg rounded-xl shadow-2xl overflow-hidden flex flex-col">
         {/* Modal Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-studio-800 bg-studio-850/50">
           <div className="flex items-center gap-2.5">

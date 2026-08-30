@@ -16,6 +16,7 @@ import { NewAssetModal } from './components/modals/NewAssetModal';
 import { ResizeSpriteModal } from './components/modals/ResizeSpriteModal';
 import { ShortcutsModal } from './components/modals/ShortcutsModal';
 import { ExportModal } from './components/preview/ExportModal';
+import { registerWebMcpTools } from './webmcp';
 
 function StudioWorkspace() {
   const { isLoaded, initializeProject } = useProjectStore();
@@ -25,6 +26,15 @@ function StudioWorkspace() {
   useEffect(() => {
     initializeProject();
   }, [initializeProject]);
+
+  // Register WebMCP Tools with browser modelContext on mount
+  useEffect(() => {
+    if (!isLoaded) return;
+    const unregister = registerWebMcpTools();
+    return () => {
+      unregister?.();
+    };
+  }, [isLoaded]);
 
   // Global Keyboard Shortcuts (Static listener with zero-lag store access)
   useEffect(() => {
@@ -98,7 +108,7 @@ function StudioWorkspace() {
 
       // Frame stepping with , / . / ArrowLeft / ArrowRight
       if (
-        (e.key === ',' || e.key === '<' || (!e.shiftKey && e.key === 'ArrowLeft'))
+        (e.key === ',' || e.key === '<' || e.key === 'ArrowLeft')
       ) {
         e.preventDefault();
         const state = project.getActiveState();
@@ -109,7 +119,7 @@ function StudioWorkspace() {
         }
       }
       if (
-        (e.key === '.' || e.key === '>' || (!e.shiftKey && e.key === 'ArrowRight'))
+        (e.key === '.' || e.key === '>' || e.key === 'ArrowRight')
       ) {
         e.preventDefault();
         const state = project.getActiveState();
@@ -118,24 +128,6 @@ function StudioWorkspace() {
           project.selectFrame(newIdx);
           playback.stepFrame(1, state.frames.length);
         }
-      }
-
-      // Pan shortcut scrolling with Shift + Arrows
-      if (e.shiftKey && e.key === 'ArrowLeft') {
-        e.preventDefault();
-        editor.setPan(editor.panX + 30, editor.panY);
-      }
-      if (e.shiftKey && e.key === 'ArrowRight') {
-        e.preventDefault();
-        editor.setPan(editor.panX - 30, editor.panY);
-      }
-      if (e.shiftKey && e.key === 'ArrowUp') {
-        e.preventDefault();
-        editor.setPan(editor.panX, editor.panY + 30);
-      }
-      if (e.shiftKey && e.key === 'ArrowDown') {
-        e.preventDefault();
-        editor.setPan(editor.panX, editor.panY - 30);
       }
     };
 
