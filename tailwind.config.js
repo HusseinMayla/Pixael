@@ -36,6 +36,9 @@ export default {
         sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
         mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
       },
+      screens: {
+        'xs': '420px',
+      },
       boxShadow: {
         'glow-sm': '0 0 15px -3px rgba(99, 102, 241, 0.25)',
         'glow-md': '0 0 25px -5px rgba(99, 102, 241, 0.35)',

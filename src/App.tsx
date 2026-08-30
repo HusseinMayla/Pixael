@@ -20,7 +20,13 @@ import { registerWebMcpTools } from './webmcp';
 
 function StudioWorkspace() {
   const { isLoaded, initializeProject } = useProjectStore();
-  const { activeModal } = useEditorStore();
+  const {
+    activeModal,
+    isLeftSidebarOpen,
+    isRightSidebarOpen,
+    toggleLeftSidebar,
+    toggleRightSidebar,
+  } = useEditorStore();
 
   // Initialize Project from IndexedDB on startup
   useEffect(() => {
@@ -71,63 +77,92 @@ function StudioWorkspace() {
         return;
       }
 
-      // Export
+      // Export shortcut
       if ((e.ctrlKey || e.metaKey) && (e.key === 'e' || e.key === 'E')) {
         e.preventDefault();
         editor.openModal('export');
         return;
       }
 
-      // Tools
-      if (e.key === 'v' || e.key === 'V') editor.setTool('pan');
-      if (e.key === 'b' || e.key === 'B') editor.setTool('pencil');
-      if (e.key === 'e' || e.key === 'E') editor.setTool('eraser');
-      if (e.key === 'g' || e.key === 'G') editor.setTool('bucket');
-      if (e.key === 'i' || e.key === 'I') editor.setTool('eyedropper');
-      if (e.key === 'l' || e.key === 'L') editor.setTool('line');
-      if (e.key === 'r' || e.key === 'R') editor.setTool('rectangle');
-      if (e.key === 'x' || e.key === 'X') editor.swapColors();
-
-      // Brush size
-      if (e.key === '[') editor.setBrushSize(Math.max(1, editor.brushSize - 1));
-      if (e.key === ']') editor.setBrushSize(Math.min(4, editor.brushSize + 1));
-
-      // View & Controls
-      if (e.key === 'h' || e.key === 'H') editor.toggleGrid();
-      if (e.key === 'o' || e.key === 'O') editor.toggleOnionSkinning();
-      if (e.key === '0') editor.resetView();
-      if (e.key === '=' || e.key === '+') editor.setZoom((z) => Math.min(64, z + 4));
-      if (e.key === '-' || e.key === '_') editor.setZoom((z) => Math.max(4, z - 4));
-
-      // Animation playback & frame step
-      if (e.code === 'Space') {
-        e.preventDefault();
-        const activeState = project.getActiveState();
-        playback.togglePlay(activeState?.frames.length || 0);
-      }
-
-      // Frame stepping with , / . / ArrowLeft / ArrowRight
-      if (
-        (e.key === ',' || e.key === '<' || e.key === 'ArrowLeft')
-      ) {
-        e.preventDefault();
-        const state = project.getActiveState();
-        if (state) {
-          const newIdx = Math.max(0, project.project.activeFrameIndex - 1);
-          project.selectFrame(newIdx);
-          playback.stepFrame(-1, state.frames.length);
+      // Tool selection shortcuts
+      switch (e.key.toLowerCase()) {
+        case 'v':
+          editor.setTool('pan');
+          break;
+        case 'b':
+          editor.setTool('pencil');
+          break;
+        case 'e':
+          editor.setTool('eraser');
+          break;
+        case 'g':
+          editor.setTool('bucket');
+          break;
+        case 'i':
+          editor.setTool('eyedropper');
+          break;
+        case 'l':
+          editor.setTool('line');
+          break;
+        case 'r':
+          editor.setTool('rectangle');
+          break;
+        case 'x':
+          editor.swapColors();
+          break;
+        case 'h':
+          editor.toggleGrid();
+          break;
+        case 'o':
+          editor.toggleOnionSkinning();
+          break;
+        case '[':
+          editor.setBrushSize(Math.max(1, editor.brushSize - 1));
+          break;
+        case ']':
+          editor.setBrushSize(Math.min(4, editor.brushSize + 1));
+          break;
+        case ' ': {
+          e.preventDefault();
+          const activeState = project.getActiveState();
+          playback.togglePlay(activeState?.frames.length || 0);
+          break;
         }
-      }
-      if (
-        (e.key === '.' || e.key === '>' || e.key === 'ArrowRight')
-      ) {
-        e.preventDefault();
-        const state = project.getActiveState();
-        if (state) {
-          const newIdx = Math.min(state.frames.length - 1, project.project.activeFrameIndex + 1);
-          project.selectFrame(newIdx);
-          playback.stepFrame(1, state.frames.length);
+        case ',':
+        case '<': {
+          e.preventDefault();
+          const state = project.getActiveState();
+          if (state) {
+            const nextIdx = Math.max(0, project.project.activeFrameIndex - 1);
+            project.selectFrame(nextIdx);
+            playback.stepFrame(-1, state.frames.length);
+          }
+          break;
         }
+        case '.':
+        case '>': {
+          e.preventDefault();
+          const state = project.getActiveState();
+          if (state) {
+            const nextIdx = Math.min(state.frames.length - 1, project.project.activeFrameIndex + 1);
+            project.selectFrame(nextIdx);
+            playback.stepFrame(1, state.frames.length);
+          }
+          break;
+        }
+        case '+':
+        case '=':
+          editor.setZoom((z) => Math.min(64, z + 4));
+          break;
+        case '-':
+        case '_':
+          editor.setZoom((z) => Math.max(4, z - 4));
+          break;
+        case '0':
+          editor.resetView();
+          break;
+        default:
+          break;
       }
     };
 
@@ -139,7 +174,7 @@ function StudioWorkspace() {
     return (
       <div className="h-screen w-screen bg-studio-950 flex flex-col items-center justify-center gap-3">
         <div className="w-8 h-8 rounded-full border-2 border-accent-500 border-t-transparent animate-spin" />
-        <span className="text-xs font-mono text-slate-400">Loading Game Asset Studio...</span>
+        <span className="text-xs font-mono text-slate-400">Loading Sprites...</span>
       </div>
     );
   }
@@ -151,18 +186,39 @@ function StudioWorkspace() {
 
       {/* 2. Main Studio Body */}
       <div className="flex-1 flex overflow-hidden relative">
-        {/* Left: Sidebar */}
-        <Sidebar />
+        {/* Mobile Left Drawer Backdrop */}
+        {isLeftSidebarOpen && (
+          <div
+            onClick={() => toggleLeftSidebar(false)}
+            className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm animate-in fade-in duration-200"
+          />
+        )}
+
+        {/* Mobile Left Drawer Container */}
+        <div
+          className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-studio-900 border-r border-studio-800 shadow-2xl flex flex-col transition-transform duration-300 ease-in-out lg:hidden ${
+            isLeftSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
+        >
+          <Sidebar />
+        </div>
+
+        {/* Desktop Left Sidebar (Docked) */}
+        {isLeftSidebarOpen && (
+          <div className="hidden lg:flex w-64 shrink-0 h-full border-r border-studio-800">
+            <Sidebar />
+          </div>
+        )}
 
         {/* Center Canvas Area */}
-        <main className="flex-1 flex flex-col relative overflow-hidden bg-studio-950">
+        <main className="flex-1 flex flex-col relative overflow-hidden bg-studio-950 min-w-0">
           {/* Floating Left Toolbar */}
-          <div className="absolute top-4 left-4 z-20">
+          <div className="absolute top-2 left-2 sm:top-4 sm:left-4 z-[31]">
             <CanvasToolbar />
           </div>
 
           {/* Floating Top Controls (Zoom, Brush, Grid) */}
-          <div className="absolute top-4 right-4 z-20">
+          <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-[31]">
             <CanvasControls />
           </div>
 
@@ -173,11 +229,31 @@ function StudioWorkspace() {
           <AnimationTimeline />
         </main>
 
-        {/* Right Sidebar: Preview & Palette Panel */}
-        <aside className="w-72 bg-studio-900/90 border-l border-studio-800 p-3 flex flex-col gap-3 overflow-y-auto z-20 backdrop-blur-md shrink-0 scrollbar-thin">
+        {/* Mobile/Tablet Right Drawer Backdrop */}
+        {isRightSidebarOpen && (
+          <div
+            onClick={() => toggleRightSidebar(false)}
+            className="fixed inset-0 bg-black/60 z-40 xl:hidden backdrop-blur-sm animate-in fade-in duration-200"
+          />
+        )}
+
+        {/* Mobile/Tablet Right Drawer Container */}
+        <div
+          className={`fixed inset-y-0 right-0 z-50 w-80 max-w-[88vw] bg-studio-900 border-l border-studio-800 shadow-2xl p-3 flex flex-col gap-3 overflow-y-auto transition-transform duration-300 ease-in-out xl:hidden scrollbar-thin ${
+            isRightSidebarOpen ? 'translate-x-0' : 'translate-x-full'
+          }`}
+        >
           <AnimationPreview />
           <PalettePanel />
-        </aside>
+        </div>
+
+        {/* Desktop Right Sidebar: Preview & Palette Panel (Docked) */}
+        {isRightSidebarOpen && (
+          <aside className="hidden xl:flex w-72 bg-studio-900/90 border-l border-studio-800 p-3 flex-col gap-3 overflow-y-auto z-20 backdrop-blur-md shrink-0 scrollbar-thin">
+            <AnimationPreview />
+            <PalettePanel />
+          </aside>
+        )}
       </div>
 
       {/* 3. Bottom Status Bar */}

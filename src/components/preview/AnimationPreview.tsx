@@ -1,12 +1,14 @@
 import React, { useEffect, useRef } from 'react';
-import { Play, Pause, RotateCcw, Repeat, StepBack, StepForward, ZoomIn, ZoomOut } from 'lucide-react';
+import { Play, Pause, RotateCcw, Repeat, StepBack, StepForward, ZoomIn, ZoomOut, X } from 'lucide-react';
 import { useProjectStore } from '../../store/projectStore';
 import { usePlaybackStore } from '../../store/playbackStore';
+import { useEditorStore } from '../../store/editorStore';
 import { renderFrameToCanvas } from '../../domain/exportOperations';
 import { Tooltip } from '../ui/Tooltip';
 
 export const AnimationPreview: React.FC = () => {
   const { getActiveAsset, getActiveState, updateAnimationState } = useProjectStore();
+  const { toggleRightSidebar } = useEditorStore();
   const {
     isPlaying,
     currentPreviewFrame,
@@ -99,18 +101,27 @@ export const AnimationPreview: React.FC = () => {
   };
 
   return (
-    <div className="bg-studio-900/95 border border-studio-800 rounded-xl p-3.5 flex flex-col gap-3 shadow-lg backdrop-blur-sm">
+    <div className="bg-studio-900/95 border border-studio-800 rounded-xl p-3 sm:p-3.5 flex flex-col gap-2.5 sm:gap-3 shadow-lg backdrop-blur-sm">
       {/* Title & State Info */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-xs font-semibold text-slate-200">Animation Preview</span>
-          <span className="px-1.5 py-0.5 text-[10px] font-mono bg-studio-800 border border-studio-700 text-accent-cyan rounded">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+          <span className="text-xs font-semibold text-slate-200">Preview</span>
+          <span className="px-1.5 py-0.5 text-[10px] font-mono bg-studio-800 border border-studio-700 text-accent-cyan rounded truncate">
             {state.name}
           </span>
         </div>
-        <div className="text-[11px] font-mono text-slate-400">
-          {totalFrames > 0 ? `${currentPreviewFrame + 1}/${totalFrames}` : '0/0'}
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="text-[11px] font-mono text-slate-400">
+            {totalFrames > 0 ? `${currentPreviewFrame + 1}/${totalFrames}` : '0/0'}
+          </div>
+          <button
+            onClick={() => toggleRightSidebar(false)}
+            className="p-1 text-slate-400 hover:text-white rounded hover:bg-studio-800 xl:hidden"
+            title="Close Panel"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
 

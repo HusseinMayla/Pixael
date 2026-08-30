@@ -14,6 +14,10 @@ interface EditorStoreState {
   onionSkinning: boolean;
   onionSkinFrames: number;
 
+  // Responsive sidebar drawers
+  isLeftSidebarOpen: boolean;
+  isRightSidebarOpen: boolean;
+
   // Active modal
   activeModal: 'export' | 'new-asset' | 'resize' | 'shortcuts' | null;
 
@@ -30,6 +34,8 @@ interface EditorStoreState {
   resetView: () => void;
   toggleOnionSkinning: () => void;
   setOnionSkinFrames: (frames: number) => void;
+  toggleLeftSidebar: (open?: boolean) => void;
+  toggleRightSidebar: (open?: boolean) => void;
   openModal: (modal: 'export' | 'new-asset' | 'resize' | 'shortcuts') => void;
   closeModal: () => void;
 }
@@ -46,6 +52,8 @@ export const useEditorStore = create<EditorStoreState>((set) => ({
   panY: 0,
   onionSkinning: false,
   onionSkinFrames: 1,
+  isLeftSidebarOpen: typeof window !== 'undefined' ? window.innerWidth >= 1024 : true,
+  isRightSidebarOpen: typeof window !== 'undefined' ? window.innerWidth >= 1280 : true,
   activeModal: null,
 
   setTool: (tool) => set({ currentTool: tool }),
@@ -64,6 +72,14 @@ export const useEditorStore = create<EditorStoreState>((set) => ({
   resetView: () => set({ zoom: 24, panX: 0, panY: 0 }),
   toggleOnionSkinning: () => set((state) => ({ onionSkinning: !state.onionSkinning })),
   setOnionSkinFrames: (frames) => set({ onionSkinFrames: Math.max(1, Math.min(3, frames)) }),
+  toggleLeftSidebar: (open) =>
+    set((state) => ({
+      isLeftSidebarOpen: open !== undefined ? open : !state.isLeftSidebarOpen,
+    })),
+  toggleRightSidebar: (open) =>
+    set((state) => ({
+      isRightSidebarOpen: open !== undefined ? open : !state.isRightSidebarOpen,
+    })),
   openModal: (modal) => set({ activeModal: modal }),
   closeModal: () => set({ activeModal: null }),
 }));

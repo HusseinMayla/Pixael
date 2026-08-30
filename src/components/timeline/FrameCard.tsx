@@ -130,11 +130,12 @@ export const FrameCard: React.FC<FrameCardProps> = ({
           }}
           disabled={index === 0}
           className="p-0.5 hover:bg-studio-700 text-slate-400 hover:text-white rounded disabled:opacity-20"
+          title="Move Left"
         >
           <ChevronLeft className="w-3 h-3" />
         </button>
 
-        <span className="text-[9px] font-mono text-slate-500">POS</span>
+        <span className="text-[8px] font-mono text-slate-600">•</span>
 
         <button
           onClick={(e) => {
@@ -143,6 +144,7 @@ export const FrameCard: React.FC<FrameCardProps> = ({
           }}
           disabled={index === totalFrames - 1}
           className="p-0.5 hover:bg-studio-700 text-slate-400 hover:text-white rounded disabled:opacity-20"
+          title="Move Right"
         >
           <ChevronRight className="w-3 h-3" />
         </button>

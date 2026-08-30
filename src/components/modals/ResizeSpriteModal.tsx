@@ -43,17 +43,17 @@ export const ResizeSpriteModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
-      <div className="bg-studio-900 border border-studio-700/80 w-full max-w-md rounded-xl shadow-2xl overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80">
+      <div className="bg-studio-900 border border-studio-750 w-full max-w-md rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-studio-800 bg-studio-850/50">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-studio-800 bg-studio-850/50">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-lg bg-accent-500/10 border border-accent-500/30 text-accent-500">
               <Scaling className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-white">Resize Sprite Canvas</h2>
-              <p className="text-xs text-slate-400">Current size: {asset.width} × {asset.height} px</p>
+              <h2 className="text-sm sm:text-base font-semibold text-white">Resize Canvas</h2>
+              <p className="text-[11px] sm:text-xs text-slate-400">Current: {asset.width} × {asset.height} px</p>
             </div>
           </div>
           <button
@@ -65,34 +65,34 @@ export const ResizeSpriteModal: React.FC = () => {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          <div className="grid grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 sm:space-y-5 overflow-y-auto">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-300">Width (pixels)</label>
+              <label className="text-xs font-medium text-slate-300">Width (px)</label>
               <input
                 type="number"
                 min="4"
                 max="128"
                 value={width}
                 onChange={(e) => handleWidthChange(parseInt(e.target.value) || 4)}
-                className="w-full px-3 py-2 text-sm font-mono bg-studio-950 border border-studio-700 rounded-lg text-white focus:outline-none focus:border-accent-500"
+                className="w-full px-3 py-1.5 sm:py-2 text-sm font-mono bg-studio-950 border border-studio-700 rounded-lg text-white focus:outline-none focus:border-accent-500"
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-300">Height (pixels)</label>
+              <label className="text-xs font-medium text-slate-300">Height (px)</label>
               <input
                 type="number"
                 min="4"
                 max="128"
                 value={height}
                 onChange={(e) => handleHeightChange(parseInt(e.target.value) || 4)}
-                className="w-full px-3 py-2 text-sm font-mono bg-studio-950 border border-studio-700 rounded-lg text-white focus:outline-none focus:border-accent-500"
+                className="w-full px-3 py-1.5 sm:py-2 text-sm font-mono bg-studio-950 border border-studio-700 rounded-lg text-white focus:outline-none focus:border-accent-500"
               />
             </div>
           </div>
 
           {/* Quick presets */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             {[16, 24, 32, 48, 64].map((sz) => (
               <button
                 key={sz}
@@ -125,54 +125,54 @@ export const ResizeSpriteModal: React.FC = () => {
 
           {/* Anchor placement */}
           <div className="space-y-2">
-            <label className="text-xs font-medium text-slate-300">Placement Anchor</label>
-            <div className="grid grid-cols-2 gap-3">
+            <label className="text-xs font-medium text-slate-300">Anchor</label>
+            <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
               <button
                 type="button"
                 onClick={() => setAnchor('center')}
-                className={`p-3 rounded-lg border text-left flex items-center gap-2.5 transition-all ${
+                className={`p-2.5 sm:p-3 rounded-lg border text-left flex items-center gap-2 sm:gap-2.5 transition-all ${
                   anchor === 'center'
                     ? 'bg-accent-500/15 border-accent-500 text-white shadow-glow-sm'
                     : 'bg-studio-800/40 border-studio-700/60 text-slate-400 hover:text-white'
                 }`}
               >
-                <AlignCenter className="w-4 h-4 text-accent-500" />
+                <AlignCenter className="w-4 h-4 text-accent-500 shrink-0" />
                 <div>
-                  <div className="text-xs font-medium">Center Anchor</div>
-                  <div className="text-[10px] text-slate-500">Expands symmetrically</div>
+                  <div className="text-xs font-medium">Center</div>
+                  <div className="text-[10px] text-slate-500">Symmetrical</div>
                 </div>
               </button>
               <button
                 type="button"
                 onClick={() => setAnchor('top-left')}
-                className={`p-3 rounded-lg border text-left flex items-center gap-2.5 transition-all ${
+                className={`p-2.5 sm:p-3 rounded-lg border text-left flex items-center gap-2 sm:gap-2.5 transition-all ${
                   anchor === 'top-left'
                     ? 'bg-accent-500/15 border-accent-500 text-white shadow-glow-sm'
                     : 'bg-studio-800/40 border-studio-700/60 text-slate-400 hover:text-white'
                 }`}
               >
-                <ArrowUpLeft className="w-4 h-4 text-accent-500" />
+                <ArrowUpLeft className="w-4 h-4 text-accent-500 shrink-0" />
                 <div>
-                  <div className="text-xs font-medium">Top-Left Anchor</div>
-                  <div className="text-[10px] text-slate-500">Preserves coordinates</div>
+                  <div className="text-xs font-medium">Top-Left</div>
+                  <div className="text-[10px] text-slate-500">Origin 0,0</div>
                 </div>
               </button>
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-studio-800">
+          <div className="flex items-center justify-end gap-2.5 pt-3 sm:pt-4 border-t border-studio-800">
             <button
               type="button"
               onClick={closeModal}
-              className="px-4 py-2 text-xs font-medium text-slate-300 hover:text-white bg-studio-800 hover:bg-studio-700 rounded-lg transition-colors"
+              className="px-3.5 py-1.5 sm:px-4 sm:py-2 text-xs font-medium text-slate-300 hover:text-white bg-studio-800 hover:bg-studio-700 rounded-lg transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2 text-xs font-medium text-white bg-accent-600 hover:bg-accent-500 rounded-lg shadow-glow-sm transition-all"
+              className="px-4 py-1.5 sm:px-5 sm:py-2 text-xs font-medium text-white bg-accent-600 hover:bg-accent-500 rounded-lg shadow-glow-sm transition-all"
             >
-              Apply Resize
+              Resize
             </button>
           </div>
         </form>

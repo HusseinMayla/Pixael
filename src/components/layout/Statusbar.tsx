@@ -13,49 +13,48 @@ export const Statusbar: React.FC = () => {
   if (!asset) return null;
 
   return (
-    <footer className="h-7 bg-studio-950 border-t border-studio-800/80 px-4 flex items-center justify-between text-[11px] text-slate-400 select-none z-30 font-mono">
+    <footer className="h-6 sm:h-7 bg-studio-950 border-t border-studio-800/80 px-2 sm:px-4 flex items-center justify-between text-[10px] sm:text-[11px] text-slate-400 select-none z-30 font-mono overflow-hidden">
       {/* Left Info Badges */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
         {/* Dimensions */}
-        <div className="flex items-center gap-1.5 text-slate-300">
-          <Scaling className="w-3.5 h-3.5 text-accent-500" />
-          <span>{asset.width} × {asset.height} px</span>
+        <div className="flex items-center gap-1 text-slate-300 shrink-0">
+          <Scaling className="w-3 h-3 text-accent-500" />
+          <span>{asset.width}×{asset.height}</span>
         </div>
 
-        <span className="text-studio-700">|</span>
+        <span className="text-studio-700 hidden xs:inline">|</span>
 
         {/* State & Frame */}
-        <div className="flex items-center gap-1.5 text-slate-300">
-          <Film className="w-3.5 h-3.5 text-accent-cyan" />
-          <span>
-            {state ? `${state.name} [Frame ${project.activeFrameIndex + 1}/${state.frames.length}]` : 'No State'}
+        <div className="flex items-center gap-1 text-slate-300 min-w-0 truncate">
+          <Film className="w-3 h-3 text-accent-cyan shrink-0" />
+          <span className="truncate">
+            {state ? `${state.name} (${project.activeFrameIndex + 1}/${state.frames.length})` : 'No State'}
           </span>
         </div>
 
-        <span className="text-studio-700">|</span>
+        <span className="text-studio-700 hidden sm:inline">|</span>
 
         {/* Tool */}
-        <div className="flex items-center gap-1.5">
-          <span className="text-slate-400 capitalize">Tool:</span>
-          <span className="text-white font-semibold capitalize">{currentTool}</span>
+        <div className="hidden sm:flex items-center gap-1 shrink-0">
+          <span className="text-slate-400 capitalize">{currentTool}</span>
           {currentTool === 'pencil' || currentTool === 'eraser' ? (
             <span className="text-slate-500">({brushSize}px)</span>
           ) : null}
         </div>
       </div>
 
-      {/* Right Zoom & Shortcuts Helper */}
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-1 text-slate-400">
-          <Info className="w-3 h-3 text-slate-500" />
-          <span>Space + Drag to Pan • Wheel to Zoom</span>
+      {/* Right Zoom & Helpers */}
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        <div className="hidden md:flex items-center gap-1 text-slate-500 text-[10px]">
+          <Info className="w-3 h-3 text-slate-600" />
+          <span>Space+Drag Pan • Wheel Zoom</span>
         </div>
 
-        <span className="text-studio-700">|</span>
+        <span className="text-studio-700 hidden md:inline">|</span>
 
-        <div className="flex items-center gap-1.5 text-slate-300">
-          <ZoomIn className="w-3.5 h-3.5 text-accent-500" />
-          <span>{zoom * 100}%</span>
+        <div className="flex items-center gap-1 text-slate-300 font-semibold">
+          <ZoomIn className="w-3 h-3 text-accent-500" />
+          <span>{zoom}x</span>
         </div>
       </div>
     </footer>

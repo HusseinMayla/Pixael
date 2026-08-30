@@ -256,7 +256,7 @@ export const PixelCanvas: React.FC = () => {
     }
   };
 
-  // Mouse Up
+  // Mouse Up / Touch End
   const handleMouseUp = () => {
     if (isPanning) {
       setIsPanning(false);
@@ -281,6 +281,107 @@ export const PixelCanvas: React.FC = () => {
     }
   };
 
+  // Touch Handlers for Mobile & Tablet
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      if (currentTool === 'pan') {
+        setIsPanning(true);
+        setPanStart({ x: touch.clientX - panX, y: touch.clientY - panY });
+        return;
+      }
+
+      const coords = getCanvasPixelCoords(touch.clientX, touch.clientY);
+      if (!coords || !asset || !frame) return;
+
+      const activeColor = currentTool === 'eraser' ? '' : primaryColor;
+
+      if (currentTool === 'eyedropper') {
+        const idx = coords.y * asset.width + coords.x;
+        const picked = frame.pixels[idx];
+        if (picked) setPrimaryColor(picked);
+        return;
+      }
+
+      if (currentTool === 'bucket') {
+        floodFill(coords.x, coords.y, activeColor);
+        return;
+      }
+
+      if (currentTool === 'line' || currentTool === 'rectangle') {
+        setIsDrawing(true);
+        setStartShapePoint(coords);
+        return;
+      }
+
+      pushHistory();
+      setIsDrawing(true);
+      setLastPoint(coords);
+      setPixel(coords.x, coords.y, activeColor, brushSize);
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      if (isPanning) {
+        setPan(touch.clientX - panStart.x, touch.clientY - panStart.y);
+        return;
+      }
+
+      const coords = getCanvasPixelCoords(touch.clientX, touch.clientY);
+      if (!isDrawing || !coords || !asset) return;
+
+      const activeColor = currentTool === 'eraser' ? '' : primaryColor;
+
+      if (currentTool === 'line' && startShapePoint) {
+        const linePoints = getLinePixels(startShapePoint.x, startShapePoint.y, coords.x, coords.y);
+        setShapePreview(linePoints.map((pt) => ({ ...pt, color: activeColor })));
+        return;
+      }
+
+      if (currentTool === 'rectangle' && startShapePoint) {
+        const minX = Math.min(startShapePoint.x, coords.x);
+        const maxX = Math.max(startShapePoint.x, coords.x);
+        const minY = Math.min(startShapePoint.y, coords.y);
+        const maxY = Math.max(startShapePoint.y, coords.y);
+
+        const rectPoints: Array<{ x: number; y: number; color: string }> = [];
+        for (let x = minX; x <= maxX; x++) {
+          rectPoints.push({ x, y: minY, color: activeColor });
+          rectPoints.push({ x, y: maxY, color: activeColor });
+        }
+        for (let y = minY; y <= maxY; y++) {
+          rectPoints.push({ x: minX, y, color: activeColor });
+          rectPoints.push({ x: maxX, y, color: activeColor });
+        }
+        setShapePreview(rectPoints);
+        return;
+      }
+
+      if ((currentTool === 'pencil' || currentTool === 'eraser') && lastPoint) {
+        const strokePoints = getLinePixels(lastPoint.x, lastPoint.y, coords.x, coords.y);
+        const batchUpdates: Array<{ x: number; y: number; color: string }> = [];
+
+        const halfBrush = Math.floor(brushSize / 2);
+        for (const pt of strokePoints) {
+          for (let dy = -halfBrush; dy < brushSize - halfBrush; dy++) {
+            for (let dx = -halfBrush; dx < brushSize - halfBrush; dx++) {
+              batchUpdates.push({
+                x: pt.x + dx,
+                y: pt.y + dy,
+                color: activeColor,
+              });
+            }
+          }
+        }
+
+        setPixelsBatch(batchUpdates);
+        setLastPoint(coords);
+      }
+    }
+  };
+
   if (!asset || !frame) {
     return (
       <div className="flex-1 flex items-center justify-center text-slate-500 text-sm">
@@ -297,6 +398,10 @@ export const PixelCanvas: React.FC = () => {
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseLeave}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleMouseUp}
+      style={{ touchAction: 'none' }}
       className={`relative flex-1 h-full w-full flex items-center justify-center overflow-hidden bg-studio-950 select-none ${
         isSpacePressed || isPanning
           ? 'cursor-grab active:cursor-grabbing'
@@ -308,7 +413,7 @@ export const PixelCanvas: React.FC = () => {
       {/* Background dot grid pattern */}
       <div className="absolute inset-0 bg-[radial-gradient(#1f2430_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
 
-      {/* Centered Canvas Container with Pan offset (Zero latency hardware accelerated) */}
+      {/* Centered Canvas Container with Pan offset */}
       <div
         className="relative will-change-transform"
         style={{

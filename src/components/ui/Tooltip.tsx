@@ -10,7 +10,7 @@ interface TooltipProps {
 export const Tooltip: React.FC<TooltipProps> = ({
   content,
   shortcut,
-  position = 'top',
+  position = 'bottom',
   children,
 }) => {
   const [isVisible, setIsVisible] = useState(false);
@@ -38,7 +38,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
       {children}
       {isVisible && (
         <div
-          className={`absolute z-50 px-2.5 py-1.5 text-xs font-medium text-slate-100 bg-studio-900 border border-studio-700/80 rounded-md shadow-xl whitespace-nowrap pointer-events-none transition-all animate-in fade-in zoom-in-95 duration-150 flex items-center gap-1.5 ${getPositionClasses()}`}
+          className={`absolute z-[31] px-2.5 py-1.5 text-xs font-medium text-slate-100 bg-studio-900 border border-studio-700/80 rounded-md shadow-xl whitespace-nowrap pointer-events-none transition-all animate-in fade-in zoom-in-95 duration-150 flex items-center gap-1.5 ${getPositionClasses()}`}
         >
           <span>{content}</span>
           {shortcut && (

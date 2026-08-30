@@ -8,6 +8,7 @@ import {
   ChevronDown,
   ChevronRight,
   MoreVertical,
+  X,
 } from 'lucide-react';
 import { useProjectStore } from '../../store/projectStore';
 import { useEditorStore } from '../../store/editorStore';
@@ -53,7 +54,7 @@ export const Sidebar: React.FC = () => {
     updateAsset,
   } = useProjectStore();
 
-  const { openModal } = useEditorStore();
+  const { openModal, toggleLeftSidebar } = useEditorStore();
   const { showToast } = useToast();
 
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
@@ -103,7 +104,7 @@ export const Sidebar: React.FC = () => {
       alert('Cannot delete the last remaining asset.');
       return;
     }
-    if (window.confirm(`Delete sprite asset "${name}"?`)) {
+    if (window.confirm(`Delete "${name}"?`)) {
       deleteAsset(assetId);
       showToast(`Deleted asset "${name}"`, 'info');
     }
@@ -111,22 +112,33 @@ export const Sidebar: React.FC = () => {
   };
 
   return (
-    <aside className="w-64 bg-studio-900/90 border-r border-studio-800 flex flex-col h-full select-none shrink-0 z-20 backdrop-blur-md">
+    <aside className="w-full h-full bg-studio-900/95 border-r border-studio-800 flex flex-col select-none shrink-0 z-20 backdrop-blur-md">
       {/* Sidebar Header */}
-      <div className="p-3.5 border-b border-studio-800 flex items-center justify-between">
+      <div className="p-3 sm:p-3.5 border-b border-studio-800 flex items-center justify-between">
         <div className="flex items-center gap-2 text-xs font-semibold text-slate-200">
           <FolderTree className="w-4 h-4 text-accent-500" />
-          <span>Project Assets ({project.assets.length})</span>
+          <span>Assets ({project.assets.length})</span>
         </div>
 
-        <Tooltip content="Create New Sprite Asset">
+        <div className="flex items-center gap-1">
+          <Tooltip content="New Asset">
+            <button
+              onClick={() => openModal('new-asset')}
+              className="p-1 rounded-md bg-accent-600/20 text-accent-500 hover:bg-accent-600/30 hover:text-accent-cyan transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          </Tooltip>
+
+          {/* Mobile Drawer Close Button */}
           <button
-            onClick={() => openModal('new-asset')}
-            className="p-1 rounded-md bg-accent-600/20 text-accent-500 hover:bg-accent-600/30 hover:text-accent-cyan transition-colors"
+            onClick={() => toggleLeftSidebar(false)}
+            className="p-1 rounded-md text-slate-400 hover:text-white hover:bg-studio-800 lg:hidden"
+            title="Close Panel"
           >
-            <Plus className="w-4 h-4" />
+            <X className="w-4 h-4" />
           </button>
-        </Tooltip>
+        </div>
       </div>
 
       {/* Asset Categories & Items List */}
@@ -161,7 +173,12 @@ export const Sidebar: React.FC = () => {
                     return (
                       <div
                         key={asset.id}
-                        onClick={() => selectAsset(asset.id)}
+                        onClick={() => {
+                          selectAsset(asset.id);
+                          if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                            toggleLeftSidebar(false);
+                          }
+                        }}
                         className={`group relative flex items-center justify-between p-2 rounded-xl border transition-all cursor-pointer ${
                           isSelected
                             ? 'bg-accent-500/15 border-accent-500 text-white shadow-glow-sm'
@@ -254,13 +271,13 @@ export const Sidebar: React.FC = () => {
       </div>
 
       {/* New Asset Button in Footer */}
-      <div className="p-3 border-t border-studio-800">
+      <div className="p-2.5 sm:p-3 border-t border-studio-800">
         <button
           onClick={() => openModal('new-asset')}
           className="w-full py-2 px-3 rounded-lg bg-studio-800/80 hover:bg-studio-750 border border-studio-700/80 hover:border-accent-500 text-white text-xs font-medium transition-all flex items-center justify-center gap-2 shadow-sm"
         >
           <Plus className="w-4 h-4 text-accent-500" />
-          <span>New Sprite Asset</span>
+          <span>New Asset</span>
         </button>
       </div>
     </aside>

@@ -39,12 +39,12 @@ export const PalettePanel: React.FC = () => {
   };
 
   return (
-    <div className="bg-studio-900/95 border border-studio-800 rounded-xl p-3.5 flex flex-col gap-3 shadow-lg backdrop-blur-sm">
+    <div className="bg-studio-900/95 border border-studio-800 rounded-xl p-3 sm:p-3.5 flex flex-col gap-2.5 sm:gap-3 shadow-lg backdrop-blur-sm">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Palette className="w-4 h-4 text-accent-500" />
-          <span className="text-xs font-semibold text-slate-200">Color Palette</span>
+          <span className="text-xs font-semibold text-slate-200">Palette</span>
         </div>
         <button
           onClick={() => setShowPresets(!showPresets)}
@@ -59,7 +59,7 @@ export const PalettePanel: React.FC = () => {
       {showPresets && (
         <div className="p-2.5 bg-studio-950/90 border border-studio-750 rounded-lg flex flex-col gap-2 animate-in fade-in zoom-in-95 duration-150">
           <div className="text-[11px] font-medium text-slate-400 flex justify-between items-center">
-            <span>Choose Preset</span>
+            <span>Presets</span>
             <button
               onClick={() => setShowPresets(false)}
               className="text-slate-500 hover:text-slate-300 text-[10px]"
@@ -93,13 +93,13 @@ export const PalettePanel: React.FC = () => {
       )}
 
       {/* Current Active Color Swatches */}
-      <div className="flex items-center gap-3 p-2.5 bg-studio-950/70 border border-studio-800/80 rounded-lg">
+      <div className="flex items-center gap-3 p-2 sm:p-2.5 bg-studio-950/70 border border-studio-800/80 rounded-lg">
         <div className="relative w-11 h-11 flex items-center justify-center">
           {/* Secondary Swatch (Behind) */}
           <div
             className="absolute bottom-0 right-0 w-7 h-7 rounded-md border-2 border-studio-700 shadow-md cursor-pointer transition-transform hover:scale-105"
             style={{ backgroundColor: secondaryColor }}
-            title={`Secondary: ${secondaryColor} (Click to set primary)`}
+            title={`Secondary: ${secondaryColor}`}
             onClick={() => setPrimaryColor(secondaryColor)}
           />
           {/* Primary Swatch (Front) */}
@@ -131,7 +131,7 @@ export const PalettePanel: React.FC = () => {
               value={primaryColor.startsWith('#') ? primaryColor : '#000000'}
               onChange={(e) => setPrimaryColor(e.target.value)}
               className="w-7 h-6 rounded cursor-pointer bg-transparent border-0"
-              title="Pick custom color"
+              title="Pick color"
             />
           </div>
         </div>
@@ -140,8 +140,8 @@ export const PalettePanel: React.FC = () => {
       {/* Palette Swatch Matrix */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between text-[11px] text-slate-400">
-          <span>Active Swatches ({asset.palette.length})</span>
-          <span className="text-[10px] text-slate-500">L-Click: 1st | R-Click: 2nd</span>
+          <span>Swatches ({asset.palette.length})</span>
+          <span className="text-[10px] text-slate-500">L: 1st | R: 2nd</span>
         </div>
 
         <div className="grid grid-cols-8 gap-1.5 p-2 bg-studio-950/60 border border-studio-800/80 rounded-lg max-h-36 overflow-y-auto">
@@ -199,7 +199,7 @@ export const PalettePanel: React.FC = () => {
           <Plus className="w-3.5 h-3.5" />
           <span>Add</span>
         </button>
-        <Tooltip content="Remove primary color from palette">
+        <Tooltip content="Remove Color">
           <button
             onClick={() => {
               removePaletteColor(asset.id, primaryColor);

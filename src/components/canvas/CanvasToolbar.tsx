@@ -56,19 +56,19 @@ export const CanvasToolbar: React.FC = () => {
   };
 
   const tools: Array<{ id: ToolType; label: string; icon: React.FC<{ className?: string }>; shortcut?: string }> = [
-    { id: 'pan', label: 'Hand / Pan Tool (Move & Zoom)', icon: Hand, shortcut: 'V' },
-    { id: 'pencil', label: 'Pencil Tool', icon: Pencil, shortcut: 'B' },
-    { id: 'eraser', label: 'Eraser Tool', icon: Eraser, shortcut: 'E' },
-    { id: 'bucket', label: 'Paint Bucket / Fill', icon: PaintBucket, shortcut: 'G' },
-    { id: 'eyedropper', label: 'Color Picker', icon: Pipette, shortcut: 'I' },
-    { id: 'line', label: 'Line Tool', icon: Slash, shortcut: 'L' },
-    { id: 'rectangle', label: 'Rectangle Tool', icon: Square, shortcut: 'R' },
+    { id: 'pan', label: 'Pan', icon: Hand, shortcut: 'V' },
+    { id: 'pencil', label: 'Pencil', icon: Pencil, shortcut: 'B' },
+    { id: 'eraser', label: 'Eraser', icon: Eraser, shortcut: 'E' },
+    { id: 'bucket', label: 'Paint Bucket', icon: PaintBucket, shortcut: 'G' },
+    { id: 'eyedropper', label: 'Eyedropper', icon: Pipette, shortcut: 'I' },
+    { id: 'line', label: 'Line', icon: Slash, shortcut: 'L' },
+    { id: 'rectangle', label: 'Rectangle', icon: Square, shortcut: 'R' },
   ];
 
   return (
-    <div className="flex flex-col items-center gap-2 p-2 bg-studio-900/90 border border-studio-800 rounded-xl shadow-xl backdrop-blur-md">
+    <div className="flex flex-col items-center gap-1 sm:gap-1.5 p-1 sm:p-1.5 bg-studio-900/90 border border-studio-800 rounded-xl shadow-xl backdrop-blur-md">
       {/* Drawing Tools */}
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-0.5 sm:gap-1">
         {tools.map((item) => {
           const Icon = item.icon;
           const isActive = currentTool === item.id;
@@ -76,71 +76,71 @@ export const CanvasToolbar: React.FC = () => {
             <Tooltip key={item.id} content={item.label} shortcut={item.shortcut} position="right">
               <button
                 onClick={() => setTool(item.id)}
-                className={`p-2 rounded-lg transition-all ${
+                className={`p-1 sm:p-1.5 rounded-lg transition-all ${
                   isActive
                     ? 'bg-accent-500 text-white shadow-glow-sm scale-105'
                     : 'text-slate-400 hover:text-white hover:bg-studio-800'
                 }`}
               >
-                <Icon className="w-4 h-4" />
+                <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </button>
             </Tooltip>
           );
         })}
       </div>
 
-      <div className="w-5 h-px bg-studio-800 my-1" />
+      <div className="w-3.5 sm:w-4 h-px bg-studio-800 my-0.5" />
 
       {/* Frame Transformations */}
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-0.5 sm:gap-1">
         <Tooltip content="Flip Horizontal" position="right">
           <button
             onClick={handleFlipH}
-            className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-studio-800 transition-colors"
+            className="p-1 sm:p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-studio-800 transition-colors"
           >
-            <FlipHorizontal2 className="w-4 h-4" />
+            <FlipHorizontal2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
         </Tooltip>
 
         <Tooltip content="Flip Vertical" position="right">
           <button
             onClick={handleFlipV}
-            className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-studio-800 transition-colors"
+            className="p-1 sm:p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-studio-800 transition-colors"
           >
-            <FlipVertical2 className="w-4 h-4" />
+            <FlipVertical2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
         </Tooltip>
 
-        <Tooltip content="Rotate 90° Clockwise" position="right">
+        <Tooltip content="Rotate 90°" position="right">
           <button
             onClick={handleRotate}
-            className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-studio-800 transition-colors"
+            className="p-1 sm:p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-studio-800 transition-colors"
           >
-            <RotateCw className="w-4 h-4" />
+            <RotateCw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
         </Tooltip>
 
         <Tooltip content="Clear Frame" position="right">
           <button
             onClick={handleClear}
-            className="p-2 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 transition-colors"
+            className="p-1 sm:p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 transition-colors"
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
         </Tooltip>
       </div>
 
-      <div className="w-5 h-px bg-studio-800 my-1" />
+      <div className="w-3.5 sm:w-4 h-px bg-studio-800 my-0.5" />
 
       {/* Undo / Redo */}
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-0.5 sm:gap-1">
         <Tooltip content="Undo" shortcut="Ctrl+Z" position="right">
           <button
             onClick={undo}
             disabled={!canUndo()}
-            className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-studio-800 disabled:opacity-20 transition-colors"
+            className="p-1 sm:p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-studio-800 disabled:opacity-20 transition-colors"
           >
-            <Undo2 className="w-4 h-4" />
+            <Undo2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
         </Tooltip>
 
@@ -148,9 +148,9 @@ export const CanvasToolbar: React.FC = () => {
           <button
             onClick={redo}
             disabled={!canRedo()}
-            className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-studio-800 disabled:opacity-20 transition-colors"
+            className="p-1 sm:p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-studio-800 disabled:opacity-20 transition-colors"
           >
-            <Redo2 className="w-4 h-4" />
+            <Redo2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
         </Tooltip>
       </div>
