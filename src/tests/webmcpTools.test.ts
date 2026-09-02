@@ -173,6 +173,12 @@ export async function runWebMcpVerificationTests(): Promise<{ passed: number; fa
   const dupStateRes = JSON.parse(await dupStateTool.execute({ assetId: wizardId, stateId: teleportStateId }));
   assert(dupStateRes.status === 'success', 'duplicate_animation_state duplicates state');
 
+  const reorderStateTool = animationTools.find((t) => t.name === 'reorder_animation_states')!;
+  const reorderStateRes = JSON.parse(
+    await reorderStateTool.execute({ assetId: wizardId, stateId: teleportStateId, toIndex: 0 })
+  );
+  assert(reorderStateRes.status === 'success', 'reorder_animation_states reorders states');
+
   const deleteStateTool = animationTools.find((t) => t.name === 'delete_animation_state')!;
   const deleteStateRes = JSON.parse(await deleteStateTool.execute({ assetId: wizardId, stateId: dupStateRes.stateId }));
   assert(deleteStateRes.status === 'success', 'delete_animation_state deletes state');

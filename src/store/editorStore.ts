@@ -19,7 +19,8 @@ interface EditorStoreState {
   isRightSidebarOpen: boolean;
 
   // Active modal
-  activeModal: 'export' | 'new-asset' | 'resize' | 'shortcuts' | null;
+  activeModal: 'export' | 'new-asset' | 'resize' | 'shortcuts' | 'import' | null;
+  pendingImportFile: File | null;
 
   // Actions
   setTool: (tool: ToolType) => void;
@@ -36,7 +37,8 @@ interface EditorStoreState {
   setOnionSkinFrames: (frames: number) => void;
   toggleLeftSidebar: (open?: boolean) => void;
   toggleRightSidebar: (open?: boolean) => void;
-  openModal: (modal: 'export' | 'new-asset' | 'resize' | 'shortcuts') => void;
+  openModal: (modal: 'export' | 'new-asset' | 'resize' | 'shortcuts' | 'import') => void;
+  setPendingImportFile: (file: File | null) => void;
   closeModal: () => void;
 }
 
@@ -55,6 +57,7 @@ export const useEditorStore = create<EditorStoreState>((set) => ({
   isLeftSidebarOpen: typeof window !== 'undefined' ? window.innerWidth >= 1024 : true,
   isRightSidebarOpen: typeof window !== 'undefined' ? window.innerWidth >= 1280 : true,
   activeModal: null,
+  pendingImportFile: null,
 
   setTool: (tool) => set({ currentTool: tool }),
   setPrimaryColor: (color) => set({ primaryColor: color }),
@@ -81,5 +84,6 @@ export const useEditorStore = create<EditorStoreState>((set) => ({
       isRightSidebarOpen: open !== undefined ? open : !state.isRightSidebarOpen,
     })),
   openModal: (modal) => set({ activeModal: modal }),
-  closeModal: () => set({ activeModal: null }),
+  setPendingImportFile: (file) => set({ pendingImportFile: file }),
+  closeModal: () => set({ activeModal: null, pendingImportFile: null }),
 }));

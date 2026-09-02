@@ -36,6 +36,7 @@ const SHORTCUT_GROUPS = [
       { key: ', / .', desc: 'Step Frame Back / Forward' },
       { key: 'Ctrl + Z', desc: 'Undo' },
       { key: 'Ctrl + Y', desc: 'Redo' },
+      { key: 'Ctrl + I', desc: 'Import Sprite / Project' },
       { key: 'Ctrl + E', desc: 'Export Sprite Sheet' },
     ],
   },

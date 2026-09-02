@@ -4,6 +4,7 @@ import { useProjectStore } from '../../store/projectStore';
 import { useEditorStore } from '../../store/editorStore';
 import { useToast } from '../ui/Toast';
 import { PRESET_PALETTES } from '../../constants/palettes';
+import { trackMilestone } from '../../utils/telemetry';
 
 const DIMENSION_PRESETS = [
   { label: '16 × 16', w: 16, h: 16, desc: 'Classic Retro' },
@@ -49,6 +50,11 @@ export const NewAssetModal: React.FC = () => {
     });
 
     showToast(`Created asset "${assetName}" (${width}×${height})`, 'success');
+    trackMilestone('ASSET_CREATED', {
+      assetName,
+      category,
+      dimensions: `${width}x${height}`,
+    });
     closeModal();
   };
 

@@ -1,33 +1,82 @@
 import { FrameData, AnimationState, SpriteAsset, ProjectData } from '../types/asset';
 import { ExportOptions, SpriteSheetMetadata } from '../types/export';
 
+const hexColorCache = new Map<string, [number, number, number, number]>();
+
+function parseColorToRgba(color: string): [number, number, number, number] {
+  const cached = hexColorCache.get(color);
+  if (cached) return cached;
+
+  if (color && color.charCodeAt(0) === 35) {
+    if (color.length === 7) {
+      const r = parseInt(color.slice(1, 3), 16) || 0;
+      const g = parseInt(color.slice(3, 5), 16) || 0;
+      const b = parseInt(color.slice(5, 7), 16) || 0;
+      const res: [number, number, number, number] = [r, g, b, 255];
+      hexColorCache.set(color, res);
+      return res;
+    }
+    if (color.length === 4) {
+      const r = parseInt(color[1] + color[1], 16) || 0;
+      const g = parseInt(color[2] + color[2], 16) || 0;
+      const b = parseInt(color[3] + color[3], 16) || 0;
+      const res: [number, number, number, number] = [r, g, b, 255];
+      hexColorCache.set(color, res);
+      return res;
+    }
+  }
+  return [0, 0, 0, 0];
+}
+
 export function renderFrameToCanvas(
   frame: FrameData,
   width: number,
   height: number,
   scale = 1
 ): HTMLCanvasElement {
-  const canvas = document.createElement('canvas');
-  canvas.width = width * scale;
-  canvas.height = height * scale;
+  const baseCanvas = document.createElement('canvas');
+  baseCanvas.width = width;
+  baseCanvas.height = height;
 
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return canvas;
+  const baseCtx = baseCanvas.getContext('2d');
+  if (!baseCtx) return baseCanvas;
 
-  ctx.imageSmoothingEnabled = false;
+  const imgData = baseCtx.createImageData(width, height);
+  const data = imgData.data;
+  const pixels = frame.pixels;
+  const len = pixels.length;
 
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const idx = y * width + x;
-      const color = frame.pixels[idx];
-      if (color) {
-        ctx.fillStyle = color;
-        ctx.fillRect(x * scale, y * scale, scale, scale);
+  for (let i = 0; i < len; i++) {
+    const color = pixels[i];
+    if (color) {
+      const [r, g, b, a] = parseColorToRgba(color);
+      if (a > 0) {
+        const idx = i * 4;
+        data[idx] = r;
+        data[idx + 1] = g;
+        data[idx + 2] = b;
+        data[idx + 3] = a;
       }
     }
   }
 
-  return canvas;
+  baseCtx.putImageData(imgData, 0, 0);
+
+  if (scale === 1) {
+    return baseCanvas;
+  }
+
+  const scaledCanvas = document.createElement('canvas');
+  scaledCanvas.width = width * scale;
+  scaledCanvas.height = height * scale;
+
+  const scaledCtx = scaledCanvas.getContext('2d');
+  if (scaledCtx) {
+    scaledCtx.imageSmoothingEnabled = false;
+    scaledCtx.drawImage(baseCanvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
+  }
+
+  return scaledCanvas;
 }
 
 export function renderFrameToPngBlob(

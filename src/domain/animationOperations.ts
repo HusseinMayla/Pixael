@@ -64,13 +64,42 @@ export function removeStateFromAsset(
     };
   }
 
+  const deletedIndex = asset.states.findIndex(s => s.id === stateId);
   const updatedStates = asset.states.filter(s => s.id !== stateId);
+  const nextActiveIndex = Math.max(0, Math.min(deletedIndex >= 0 ? deletedIndex : 0, updatedStates.length - 1));
+
   return {
     updatedAsset: {
       ...asset,
       states: updatedStates,
       updatedAt: Date.now(),
     },
-    selectedStateId: updatedStates[0].id,
+    selectedStateId: updatedStates[nextActiveIndex].id,
+  };
+}
+
+export function reorderStatesInAsset(
+  asset: SpriteAsset,
+  fromIndex: number,
+  toIndex: number
+): SpriteAsset {
+  if (
+    fromIndex < 0 ||
+    fromIndex >= asset.states.length ||
+    toIndex < 0 ||
+    toIndex >= asset.states.length ||
+    fromIndex === toIndex
+  ) {
+    return asset;
+  }
+
+  const updatedStates = [...asset.states];
+  const [movedState] = updatedStates.splice(fromIndex, 1);
+  updatedStates.splice(toIndex, 0, movedState);
+
+  return {
+    ...asset,
+    states: updatedStates,
+    updatedAt: Date.now(),
   };
 }

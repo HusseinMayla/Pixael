@@ -42,6 +42,7 @@ interface ProjectStoreState {
   renameAnimationState: (assetId: string, stateId: string, name: string) => void;
   updateAnimationState: (assetId: string, stateId: string, updates: { fps?: number; loop?: boolean }) => void;
   deleteAnimationState: (assetId: string, stateId: string) => void;
+  reorderAnimationStates: (assetId: string, fromIndex: number, toIndex: number) => void;
   duplicateAnimationState: (assetId: string, stateId: string) => AnimationState | null;
   selectAnimationState: (assetId: string, stateId: string) => void;
 
@@ -75,6 +76,9 @@ interface ProjectStoreState {
 
   // Project Import/Export
   importProjectJson: (jsonString: string) => void;
+  importAsset: (asset: SpriteAsset) => void;
+  importStateToAsset: (assetId: string, state: AnimationState, newPaletteColors?: string[]) => void;
+  replaceCurrentFramePixels: (pixels: string[]) => void;
 }
 
 const MAX_HISTORY = 30;
@@ -431,11 +435,36 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     const { updatedAsset, selectedStateId } = domain.removeStateFromAsset(asset, stateId);
     const updatedAssets = project.assets.map(a => (a.id === assetId ? updatedAsset : a));
 
+    // If deleting the active state, switch to selectedStateId (adjacent state). Otherwise preserve activeStateId.
+    const newActiveStateId = project.activeStateId === stateId ? selectedStateId : project.activeStateId;
+    const activeState = updatedAsset.states.find(s => s.id === newActiveStateId) || updatedAsset.states[0];
+    const maxFrameIndex = Math.max(0, (activeState?.frames?.length || 1) - 1);
+    const newActiveFrameIndex = project.activeStateId === stateId ? 0 : Math.min(project.activeFrameIndex, maxFrameIndex);
+
     const updatedProject: ProjectData = {
       ...project,
       assets: updatedAssets,
-      activeStateId: selectedStateId,
-      activeFrameIndex: 0,
+      activeStateId: newActiveStateId,
+      activeFrameIndex: newActiveFrameIndex,
+      savedAt: Date.now(),
+    };
+
+    set({ project: updatedProject });
+    debounceSave(updatedProject, (isSaving, lastSaved) => set({ isSaving, lastSaved }));
+  },
+
+  reorderAnimationStates: (assetId, fromIndex, toIndex) => {
+    const { project, pushHistory } = get();
+    const asset = project.assets.find(a => a.id === assetId);
+    if (!asset) return;
+
+    pushHistory();
+    const updatedAsset = domain.reorderStatesInAsset(asset, fromIndex, toIndex);
+    const updatedAssets = project.assets.map(a => (a.id === assetId ? updatedAsset : a));
+
+    const updatedProject: ProjectData = {
+      ...project,
+      assets: updatedAssets,
       savedAt: Date.now(),
     };
 
@@ -1007,5 +1036,85 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     } catch (err) {
       alert(`Invalid project JSON: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
+  },
+
+  importAsset: (newAsset) => {
+    const { project, pushHistory } = get();
+    pushHistory();
+
+    const updatedProject: ProjectData = {
+      ...project,
+      assets: [...project.assets, newAsset],
+      activeAssetId: newAsset.id,
+      activeStateId: newAsset.states[0]?.id || null,
+      activeFrameIndex: 0,
+      savedAt: Date.now(),
+    };
+
+    set({ project: updatedProject });
+    debounceSave(updatedProject, (isSaving, lastSaved) => set({ isSaving, lastSaved }));
+  },
+
+  importStateToAsset: (assetId, newState, newPaletteColors = []) => {
+    const { project, pushHistory } = get();
+    const asset = project.assets.find((a) => a.id === assetId);
+    if (!asset) return;
+
+    pushHistory();
+
+    // Merge new colors into palette without duplicates
+    const mergedPalette = [...asset.palette];
+    for (const c of newPaletteColors) {
+      if (c && !mergedPalette.some((existing) => existing.toLowerCase() === c.toLowerCase())) {
+        mergedPalette.push(c);
+      }
+    }
+
+    const { updatedAsset } = domain.addStateToAsset(
+      { ...asset, palette: mergedPalette },
+      newState
+    );
+
+    const updatedAssets = project.assets.map((a) => (a.id === assetId ? updatedAsset : a));
+    const updatedProject: ProjectData = {
+      ...project,
+      assets: updatedAssets,
+      activeAssetId: assetId,
+      activeStateId: newState.id,
+      activeFrameIndex: 0,
+      savedAt: Date.now(),
+    };
+
+    set({ project: updatedProject });
+    debounceSave(updatedProject, (isSaving, lastSaved) => set({ isSaving, lastSaved }));
+  },
+
+  replaceCurrentFramePixels: (pixels) => {
+    const asset = get().getActiveAsset();
+    const state = get().getActiveState();
+    const frame = get().getActiveFrame();
+    if (!asset || !state || !frame) return;
+
+    get().pushHistory();
+
+    const updatedFrame: FrameData = { ...frame, pixels: [...pixels] };
+    const frameIndex = get().project.activeFrameIndex;
+
+    const updatedFrames = state.frames.map((f, i) => (i === frameIndex ? updatedFrame : f));
+    const updatedState = { ...state, frames: updatedFrames };
+    const updatedAsset = {
+      ...asset,
+      states: asset.states.map((s) => (s.id === state.id ? updatedState : s)),
+      updatedAt: Date.now(),
+    };
+
+    const updatedProject = {
+      ...get().project,
+      assets: get().project.assets.map((a) => (a.id === asset.id ? updatedAsset : a)),
+      savedAt: Date.now(),
+    };
+
+    set({ project: updatedProject });
+    debounceSave(updatedProject, (isSaving, lastSaved) => set({ isSaving, lastSaved }));
   },
 }));

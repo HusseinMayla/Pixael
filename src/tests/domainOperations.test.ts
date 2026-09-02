@@ -6,6 +6,7 @@ import {
   cloneAnimationState,
   addStateToAsset,
   removeStateFromAsset,
+  reorderStatesInAsset,
   createFrame,
   addFrameToState,
   duplicateFrameInState,
@@ -21,6 +22,9 @@ import {
   removePaletteColorFromAsset,
   exportProjectToJson,
   importProjectFromJson,
+  rgbToHex,
+  extractPaletteFromPixels,
+  buildAssetFromSlice,
 } from '../domain';
 import { getInitialProjectData } from '../persistence/initialData';
 
@@ -69,7 +73,11 @@ export function runDomainVerificationTests(): { passed: number; failed: number; 
   const { updatedAsset } = addStateToAsset(asset, newState);
   assert(updatedAsset.states.length === 3, 'addStateToAsset appends state');
 
-  const { updatedAsset: afterRemove } = removeStateFromAsset(updatedAsset, newState.id);
+  const reorderedAsset = reorderStatesInAsset(updatedAsset, 0, 2);
+  assert(reorderedAsset.states[2].name === 'Idle', 'reorderStatesInAsset moves state from 0 to 2');
+  assert(reorderedAsset.states[0].name === 'Walk', 'reorderStatesInAsset shifts preceding state left');
+
+  const { updatedAsset: afterRemove } = removeStateFromAsset(reorderedAsset, newState.id);
   assert(afterRemove.states.length === 2, 'removeStateFromAsset removes state');
 
   // 4. Frame Operations
@@ -120,7 +128,7 @@ export function runDomainVerificationTests(): { passed: number; failed: number; 
   const withoutColor = removePaletteColorFromAsset(withColor, '#ff004d');
   assert(!withoutColor.includes('#ff004d'), 'removePaletteColorFromAsset removes color');
 
-  // 7. JSON Project Serialization
+  // 7. JSON Project Serialization & Import
   const project = getInitialProjectData();
   const jsonStr = exportProjectToJson(project);
   assert(jsonStr.length > 100, 'exportProjectToJson generates JSON string');
@@ -128,6 +136,39 @@ export function runDomainVerificationTests(): { passed: number; failed: number; 
   const imported = importProjectFromJson(jsonStr);
   assert(imported.assets.length === project.assets.length, 'importProjectFromJson restores assets');
   assert(imported.name === project.name, 'importProjectFromJson restores project name');
+
+  // 8. Import Domain Operations
+  assert(rgbToHex(255, 0, 0) === '#ff0000', 'rgbToHex formats pure red');
+  assert(rgbToHex(0, 128, 255) === '#0080ff', 'rgbToHex formats cyan-blue');
+
+  const samplePixels = ['#ff0000', '#00ff00', '#ff0000', '', '#ff0000', '#00ff00'];
+  const extractedPal = extractPaletteFromPixels(samplePixels);
+  assert(extractedPal[0] === '#ff0000', 'extractPaletteFromPixels sorts by most frequent');
+  assert(extractedPal.length === 2, 'extractPaletteFromPixels ignores empty transparent strings');
+
+  const mockSlice = {
+    frames: [
+      { id: 'f1', pixels: new Array(16 * 16).fill('#ff0000'), width: 16, height: 16 },
+      { id: 'f2', pixels: new Array(16 * 16).fill('#00ff00'), width: 16, height: 16 },
+    ],
+    width: 16,
+    height: 16,
+    palette: ['#ff0000', '#00ff00'],
+    totalFrames: 2,
+  };
+
+  const builtAsset = buildAssetFromSlice(mockSlice, {
+    type: 'new-asset',
+    assetName: 'Hero Slash',
+    category: 'Characters',
+    stateName: 'Attack',
+    fps: 10,
+  });
+
+  assert(builtAsset.name === 'Hero Slash', 'buildAssetFromSlice sets asset name');
+  assert(builtAsset.states[0].name === 'Attack', 'buildAssetFromSlice sets state name');
+  assert(builtAsset.states[0].frames.length === 2, 'buildAssetFromSlice converts frames');
+  assert(builtAsset.width === 16 && builtAsset.height === 16, 'buildAssetFromSlice sets dimensions');
 
   return { passed, failed, results };
 }

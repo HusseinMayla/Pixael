@@ -18,7 +18,7 @@ interface FrameCardProps {
   onMoveRight: () => void;
 }
 
-export const FrameCard: React.FC<FrameCardProps> = ({
+const FrameCardComponent: React.FC<FrameCardProps> = ({
   frame,
   index,
   totalFrames,
@@ -33,6 +33,7 @@ export const FrameCard: React.FC<FrameCardProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const cardRef = useRef<HTMLDivElement | null>(null);
+  const rafId = useRef<number | null>(null);
 
   // Auto scroll active frame into view
   useEffect(() => {
@@ -41,23 +42,33 @@ export const FrameCard: React.FC<FrameCardProps> = ({
     }
   }, [isActive]);
 
-  // Render thumbnail
+  // Render thumbnail with requestAnimationFrame
   useEffect(() => {
     if (!canvasRef.current) return;
-    const canvas = canvasRef.current;
-    const thumbScale = Math.max(1, Math.min(4, Math.floor(48 / Math.max(width, height))));
+    if (rafId.current !== null) cancelAnimationFrame(rafId.current);
 
-    const offscreen = renderFrameToCanvas(frame, width, height, thumbScale);
-    canvas.width = width * thumbScale;
-    canvas.height = height * thumbScale;
+    rafId.current = requestAnimationFrame(() => {
+      rafId.current = null;
+      if (!canvasRef.current) return;
+      const canvas = canvasRef.current;
+      const thumbScale = Math.max(1, Math.min(4, Math.floor(48 / Math.max(width, height))));
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+      const offscreen = renderFrameToCanvas(frame, width, height, thumbScale);
+      canvas.width = width * thumbScale;
+      canvas.height = height * thumbScale;
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(offscreen, 0, 0);
-  }, [frame, width, height]);
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(offscreen, 0, 0);
+    });
+
+    return () => {
+      if (rafId.current !== null) cancelAnimationFrame(rafId.current);
+    };
+  }, [frame.pixels, width, height]);
 
   return (
     <div
@@ -152,3 +163,5 @@ export const FrameCard: React.FC<FrameCardProps> = ({
     </div>
   );
 };
+
+export const FrameCard = React.memo(FrameCardComponent);

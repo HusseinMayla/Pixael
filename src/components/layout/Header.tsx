@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   Sparkles,
   Download,
+  Upload,
   Scaling,
   Plus,
   Undo2,
@@ -169,6 +170,17 @@ export const Header: React.FC = () => {
           >
             <Plus className="w-3.5 h-3.5 text-accent-500" />
             <span className="hidden sm:inline">New Asset</span>
+          </button>
+        </Tooltip>
+
+        {/* Import Modal Trigger */}
+        <Tooltip content="Import Sprite / Project">
+          <button
+            onClick={() => openModal('import')}
+            className="p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg bg-studio-800 hover:bg-studio-750 border border-studio-700 hover:border-accent-cyan text-white text-xs font-medium transition-all flex items-center gap-1.5 shadow-sm"
+          >
+            <Upload className="w-3.5 h-3.5 text-accent-cyan" />
+            <span className="hidden sm:inline">Import</span>
           </button>
         </Tooltip>
 

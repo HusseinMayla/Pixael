@@ -226,6 +226,75 @@ export const animationTools: WebMcpTool[] = [
   },
 
   {
+    name: 'reorder_animation_states',
+    description: 'Reorders animation states within an asset by shifting a state from one index to another.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        assetId: {
+          type: 'string',
+          description: 'The asset ID',
+        },
+        fromIndex: {
+          type: 'number',
+          description: 'The original 0-based index of the animation state to move',
+        },
+        stateId: {
+          type: 'string',
+          description: 'Optional ID of the state to move (if fromIndex is not supplied)',
+        },
+        toIndex: {
+          type: 'number',
+          description: 'The target 0-based index to place the animation state at',
+        },
+      },
+      required: ['assetId', 'toIndex'],
+    },
+    annotations: {
+      readOnlyHint: false,
+    },
+    execute: async (input: { assetId: string; fromIndex?: number; stateId?: string; toIndex: number }) => {
+      try {
+        const asset = resolveAsset(input?.assetId);
+        let srcIndex = input.fromIndex;
+
+        if (srcIndex === undefined && input.stateId) {
+          const idx = asset.states.findIndex((s) => s.id === input.stateId);
+          if (idx !== -1) srcIndex = idx;
+        }
+
+        if (srcIndex === undefined || typeof srcIndex !== 'number' || srcIndex < 0 || srcIndex >= asset.states.length) {
+          return JSON.stringify({
+            status: 'error',
+            message: `Invalid source index: ${srcIndex}. State index must be between 0 and ${asset.states.length - 1}.`,
+          });
+        }
+
+        if (typeof input.toIndex !== 'number' || input.toIndex < 0 || input.toIndex >= asset.states.length) {
+          return JSON.stringify({
+            status: 'error',
+            message: `Invalid target index: ${input.toIndex}. Target index must be between 0 and ${asset.states.length - 1}.`,
+          });
+        }
+
+        const store = useProjectStore.getState();
+        store.reorderAnimationStates(asset.id, srcIndex, input.toIndex);
+
+        const updatedAsset = useProjectStore.getState().project.assets.find((a) => a.id === asset.id);
+        return JSON.stringify({
+          status: 'success',
+          assetId: asset.id,
+          fromIndex: srcIndex,
+          toIndex: input.toIndex,
+          states: updatedAsset?.states.map((s, i) => ({ index: i, id: s.id, name: s.name })) || [],
+        });
+      } catch (err) {
+        return JSON.stringify({ status: 'error', message: (err as Error).message });
+      }
+    },
+  },
+
+  {
     name: 'set_animation_speed',
     description: 'Sets the playback speed (FPS) for an animation state.',
     inputSchema: {

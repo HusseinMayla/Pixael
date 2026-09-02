@@ -16,7 +16,9 @@ import { NewAssetModal } from './components/modals/NewAssetModal';
 import { ResizeSpriteModal } from './components/modals/ResizeSpriteModal';
 import { ShortcutsModal } from './components/modals/ShortcutsModal';
 import { ExportModal } from './components/preview/ExportModal';
+import { ImportModal } from './components/modals/ImportModal';
 import { registerWebMcpTools } from './webmcp';
+import { trackMilestone } from './utils/telemetry';
 
 function StudioWorkspace() {
   const { isLoaded, initializeProject } = useProjectStore();
@@ -31,6 +33,10 @@ function StudioWorkspace() {
   // Initialize Project from IndexedDB on startup
   useEffect(() => {
     initializeProject();
+    const isReload = window.performance?.navigation?.type === 1 || 
+      (performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming)?.type === 'reload';
+    
+    trackMilestone(isReload ? 'APP_REFRESHED' : 'APP_OPENED');
   }, [initializeProject]);
 
   // Register WebMCP Tools with browser modelContext on mount
@@ -41,6 +47,37 @@ function StudioWorkspace() {
       unregister?.();
     };
   }, [isLoaded]);
+
+  // Global Drag & Drop Handler for images and JSON files
+  useEffect(() => {
+    const handleDragOver = (e: DragEvent) => {
+      e.preventDefault();
+      if (e.dataTransfer) {
+        e.dataTransfer.dropEffect = 'copy';
+      }
+    };
+
+    const handleDrop = (e: DragEvent) => {
+      e.preventDefault();
+      const files = e.dataTransfer?.files;
+      if (files && files.length > 0) {
+        const file = files[0];
+        const isImage = file.type.startsWith('image/') || /\.(png|jpg|jpeg|webp|gif)$/i.test(file.name);
+        const isJson = file.type === 'application/json' || file.name.endsWith('.json');
+        if (isImage || isJson) {
+          useEditorStore.getState().setPendingImportFile(file);
+          useEditorStore.getState().openModal('import');
+        }
+      }
+    };
+
+    window.addEventListener('dragover', handleDragOver);
+    window.addEventListener('drop', handleDrop);
+    return () => {
+      window.removeEventListener('dragover', handleDragOver);
+      window.removeEventListener('drop', handleDrop);
+    };
+  }, []);
 
   // Global Keyboard Shortcuts (Static listener with zero-lag store access)
   useEffect(() => {
@@ -77,10 +114,15 @@ function StudioWorkspace() {
         return;
       }
 
-      // Export shortcut
+      // Export & Import shortcuts
       if ((e.ctrlKey || e.metaKey) && (e.key === 'e' || e.key === 'E')) {
         e.preventDefault();
         editor.openModal('export');
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'i' || e.key === 'I')) {
+        e.preventDefault();
+        editor.openModal('import');
         return;
       }
 
@@ -264,6 +306,7 @@ function StudioWorkspace() {
       {activeModal === 'resize' && <ResizeSpriteModal />}
       {activeModal === 'shortcuts' && <ShortcutsModal />}
       {activeModal === 'export' && <ExportModal />}
+      {activeModal === 'import' && <ImportModal />}
     </div>
   );
 }

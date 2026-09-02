@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   FolderTree,
   Plus,
+  Upload,
   Copy,
   Trash2,
   Edit2,
@@ -16,27 +17,39 @@ import { SpriteAsset } from '../../types/asset';
 import { renderFrameToCanvas } from '../../domain/exportOperations';
 import { Tooltip } from '../ui/Tooltip';
 import { useToast } from '../ui/Toast';
+import { trackMilestone } from '../../utils/telemetry';
 
 // Mini canvas thumbnail for sidebar item
-const AssetThumbnail: React.FC<{ asset: SpriteAsset }> = ({ asset }) => {
+const AssetThumbnailComponent: React.FC<{ asset: SpriteAsset }> = ({ asset }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const rafId = useRef<number | null>(null);
+  const firstFrame = asset.states[0]?.frames[0];
 
   useEffect(() => {
-    if (!canvasRef.current || !asset.states[0]?.frames[0]) return;
-    const firstFrame = asset.states[0].frames[0];
-    const thumbScale = Math.max(1, Math.min(3, Math.floor(28 / Math.max(asset.width, asset.height))));
+    if (!canvasRef.current || !firstFrame) return;
+    if (rafId.current !== null) cancelAnimationFrame(rafId.current);
 
-    const offscreen = renderFrameToCanvas(firstFrame, asset.width, asset.height, thumbScale);
-    const canvas = canvasRef.current;
-    canvas.width = asset.width * thumbScale;
-    canvas.height = asset.height * thumbScale;
+    rafId.current = requestAnimationFrame(() => {
+      rafId.current = null;
+      if (!canvasRef.current || !firstFrame) return;
+      const thumbScale = Math.max(1, Math.min(3, Math.floor(28 / Math.max(asset.width, asset.height))));
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(offscreen, 0, 0);
-  }, [asset]);
+      const offscreen = renderFrameToCanvas(firstFrame, asset.width, asset.height, thumbScale);
+      const canvas = canvasRef.current;
+      canvas.width = asset.width * thumbScale;
+      canvas.height = asset.height * thumbScale;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(offscreen, 0, 0);
+    });
+
+    return () => {
+      if (rafId.current !== null) cancelAnimationFrame(rafId.current);
+    };
+  }, [firstFrame?.pixels, asset.width, asset.height]);
 
   return (
     <div className="w-8 h-8 flex items-center justify-center bg-studio-950/80 border border-studio-750/80 rounded-md overflow-hidden shrink-0 relative">
@@ -44,6 +57,8 @@ const AssetThumbnail: React.FC<{ asset: SpriteAsset }> = ({ asset }) => {
     </div>
   );
 };
+
+const AssetThumbnail = React.memo(AssetThumbnailComponent);
 
 export const Sidebar: React.FC = () => {
   const {
@@ -106,6 +121,7 @@ export const Sidebar: React.FC = () => {
     }
     if (window.confirm(`Delete "${name}"?`)) {
       deleteAsset(assetId);
+      trackMilestone('ASSET_DELETED', { assetName: name, remainingAssets: project.assets.length - 1 });
       showToast(`Deleted asset "${name}"`, 'info');
     }
     setActiveMenuAssetId(null);
@@ -121,6 +137,15 @@ export const Sidebar: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-1">
+          <Tooltip content="Import Sprite / Project">
+            <button
+              onClick={() => openModal('import')}
+              className="p-1 rounded-md bg-accent-cyan/10 text-accent-cyan hover:bg-accent-cyan/20 transition-colors"
+            >
+              <Upload className="w-4 h-4" />
+            </button>
+          </Tooltip>
+
           <Tooltip content="New Asset">
             <button
               onClick={() => openModal('new-asset')}
@@ -270,14 +295,21 @@ export const Sidebar: React.FC = () => {
         })}
       </div>
 
-      {/* New Asset Button in Footer */}
-      <div className="p-2.5 sm:p-3 border-t border-studio-800">
+      {/* Footer Action Buttons */}
+      <div className="p-2.5 sm:p-3 border-t border-studio-800 grid grid-cols-2 gap-2">
         <button
           onClick={() => openModal('new-asset')}
-          className="w-full py-2 px-3 rounded-lg bg-studio-800/80 hover:bg-studio-750 border border-studio-700/80 hover:border-accent-500 text-white text-xs font-medium transition-all flex items-center justify-center gap-2 shadow-sm"
+          className="py-2 px-2.5 rounded-lg bg-studio-800/80 hover:bg-studio-750 border border-studio-700/80 hover:border-accent-500 text-white text-xs font-medium transition-all flex items-center justify-center gap-1.5 shadow-sm"
         >
-          <Plus className="w-4 h-4 text-accent-500" />
+          <Plus className="w-3.5 h-3.5 text-accent-500" />
           <span>New Asset</span>
+        </button>
+        <button
+          onClick={() => openModal('import')}
+          className="py-2 px-2.5 rounded-lg bg-studio-800/80 hover:bg-studio-750 border border-studio-700/80 hover:border-accent-cyan text-white text-xs font-medium transition-all flex items-center justify-center gap-1.5 shadow-sm"
+        >
+          <Upload className="w-3.5 h-3.5 text-accent-cyan" />
+          <span>Import</span>
         </button>
       </div>
     </aside>

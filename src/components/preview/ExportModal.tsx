@@ -5,6 +5,7 @@ import { useEditorStore } from '../../store/editorStore';
 import { useToast } from '../ui/Toast';
 import { renderFrameToPngBlob, generateSpriteSheet, downloadBlob, downloadJson } from '../../domain/exportOperations';
 import { SpriteSheetLayout } from '../../types/export';
+import { trackMilestone } from '../../utils/telemetry';
 
 export const ExportModal: React.FC = () => {
   const { getActiveAsset, getActiveState, getActiveFrame, project } = useProjectStore();
@@ -58,6 +59,13 @@ export const ExportModal: React.FC = () => {
         downloadJson(project, jsonName);
         showToast(`Exported project data "${jsonName}"`, 'success');
       }
+
+      trackMilestone('ASSET_EXPORTED', {
+        exportType,
+        assetName: asset.name,
+        stateName: state.name,
+        scale,
+      });
 
       closeModal();
     } catch (err) {

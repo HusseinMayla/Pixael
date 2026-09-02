@@ -222,7 +222,7 @@ src/webmcp/tools/
 ## 5. Codebase Directory Structure
 
 ```
-c:\Users\Abbas\dev\SpritesCanvas\
+SpritesCanvas/
 ├── src/
 │   ├── components/
 │   │   ├── canvas/          # PixelCanvas, CanvasToolbar, CanvasControls

@@ -1,7 +1,7 @@
 # 🛠️ WebMCP Tool Reference — Game Asset Studio (SpritesCanvas)
 
 > **Specification:** Chrome Native `document.modelContext` Protocol  
-> **Total Registered Tools:** 36 Tools across 7 Functional Modules
+> **Total Registered Tools:** 37 Tools across 7 Functional Modules
 
 ---
 
@@ -9,7 +9,7 @@
 
 1. [Query & State Inspection Tools (5)](#1-query--state-inspection-tools)
 2. [Asset Management Tools (4)](#2-asset-management-tools)
-3. [Animation State Tools (8)](#3-animation-state-tools)
+3. [Animation State Tools (9)](#3-animation-state-tools)
 4. [Frame Management Tools (4)](#4-frame-management-tools)
 5. [Pixel Editing & Shape Tools (9)](#5-pixel-editing--shape-tools)
 6. [Palette Management Tools (4)](#6-palette-management-tools)
@@ -34,8 +34,8 @@
         "id": "asset_hero_123",
         "name": "Knight Hero",
         "category": "Characters",
-        "width": 16,
-        "height": 16,
+        "width": 24,
+        "height": 24,
         "stateCount": 3,
         "states": ["Idle", "Walk", "Attack"]
       }
@@ -55,8 +55,8 @@
       "id": "asset_hero_123",
       "name": "Knight Hero",
       "category": "Characters",
-      "width": 16,
-      "height": 16,
+      "width": 24,
+      "height": 24,
       "palette": ["#000000", "#ffffff", "#ff004d"],
       "states": [
         { "id": "state_idle_456", "name": "Idle", "fps": 8, "loop": true, "frameCount": 4, "frameIds": ["f1", "f2", "f3", "f4"] }
@@ -182,6 +182,10 @@
 ### `duplicate_animation_state`
 - **Description:** Duplicates an animation state along with all its frames.
 - **Input Schema:** `assetId` *(required)*, `stateId` *(required)*.
+
+### `reorder_animation_states`
+- **Description:** Reorders animation states within an asset by shifting a state from one index to another.
+- **Input Schema:** `assetId` *(required)*, `toIndex` *(required)*, `fromIndex` *(optional)*, `stateId` *(optional)*.
 
 ### `set_animation_speed`
 - **Description:** Sets playback speed (FPS) for an animation state.

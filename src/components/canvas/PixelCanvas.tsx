@@ -1,13 +1,14 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useProjectStore } from '../../store/projectStore';
 import { useEditorStore } from '../../store/editorStore';
-import { renderPixelEditorCanvas } from '../../utils/canvasRenderer';
+import { renderPixelEditorCanvas, renderOverlayCanvas } from '../../utils/canvasRenderer';
 import { getLinePixels } from '../../utils/colorUtils';
 import { CanvasPoint } from '../../types/editor';
 
 export const PixelCanvas: React.FC = () => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const overlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const {
     getActiveAsset,
@@ -44,9 +45,12 @@ export const PixelCanvas: React.FC = () => {
   const [isSpacePressed, setIsSpacePressed] = useState(false);
   const [lastPoint, setLastPoint] = useState<CanvasPoint | null>(null);
   const [startShapePoint, setStartShapePoint] = useState<CanvasPoint | null>(null);
-  const [hoverPixel, setHoverPixel] = useState<CanvasPoint | null>(null);
   const [shapePreview, setShapePreview] = useState<Array<{ x: number; y: number; color: string }> | null>(null);
   const [panStart, setPanStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  // Hover pixel tracked via Ref to avoid triggering React component re-renders on every mouse move
+  const hoverPixelRef = useRef<CanvasPoint | null>(null);
+  const overlayRafId = useRef<number | null>(null);
 
   // Compute onion skin ghost frames
   const ghostFrames = React.useMemo(() => {
@@ -103,7 +107,29 @@ export const PixelCanvas: React.FC = () => {
     [asset, zoom]
   );
 
-  // Render canvas on changes
+  // Redraw Overlay Canvas (Cursor Box, Shape Preview) via RAF
+  const requestOverlayRedraw = useCallback(() => {
+    if (overlayRafId.current !== null) return;
+
+    overlayRafId.current = requestAnimationFrame(() => {
+      overlayRafId.current = null;
+      if (!overlayCanvasRef.current || !asset) return;
+
+      renderOverlayCanvas({
+        canvas: overlayCanvasRef.current,
+        width: asset.width,
+        height: asset.height,
+        zoom,
+        hoverPixel: hoverPixelRef.current,
+        hoverColor: currentTool === 'eraser' ? 'transparent' : primaryColor,
+        brushSize,
+        tool: currentTool,
+        activeShapePreview: shapePreview,
+      });
+    });
+  }, [asset, zoom, currentTool, primaryColor, brushSize, shapePreview]);
+
+  // 1. Render Base Canvas on changes to frame pixels, dimensions, zoom, grid, or checkerboard
   useEffect(() => {
     if (!canvasRef.current || !asset || !frame) return;
 
@@ -116,35 +142,42 @@ export const PixelCanvas: React.FC = () => {
       showGrid,
       showCheckerboard,
       onionSkinFrames: ghostFrames,
-      hoverPixel,
-      hoverColor: currentTool === 'eraser' ? 'transparent' : primaryColor,
-      brushSize,
-      tool: currentTool,
-      activeShapePreview: shapePreview,
     });
+
+    // Also sync overlay canvas dimensions
+    if (overlayCanvasRef.current) {
+      const tw = asset.width * zoom;
+      const th = asset.height * zoom;
+      if (overlayCanvasRef.current.width !== tw || overlayCanvasRef.current.height !== th) {
+        overlayCanvasRef.current.width = tw;
+        overlayCanvasRef.current.height = th;
+      }
+    }
   }, [
-    asset,
-    frame,
+    asset?.width,
+    asset?.height,
+    frame?.id,
+    frame?.pixels,
     zoom,
     showGrid,
     showCheckerboard,
     ghostFrames,
-    hoverPixel,
-    primaryColor,
-    brushSize,
-    currentTool,
-    shapePreview,
   ]);
 
-  // Wheel zoom handler (Scroll UP = Zoom OUT, Scroll DOWN = Zoom IN)
+  // 2. Render Overlay Canvas when tools, color, or shape preview change
+  useEffect(() => {
+    requestOverlayRedraw();
+  }, [requestOverlayRedraw, currentTool, primaryColor, brushSize, shapePreview]);
+
+  // Wheel zoom handler with smooth stepping
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
     if (e.deltaY < 0) {
       // Scroll UP -> Zoom OUT
-      setZoom((z) => Math.max(4, z - 2));
+      setZoom((z) => Math.max(2, z - (z > 16 ? 4 : 2)));
     } else if (e.deltaY > 0) {
       // Scroll DOWN -> Zoom IN
-      setZoom((z) => Math.min(64, z + 2));
+      setZoom((z) => Math.min(64, z + (z >= 16 ? 4 : 2)));
     }
   };
 
@@ -201,7 +234,8 @@ export const PixelCanvas: React.FC = () => {
     }
 
     const coords = getCanvasPixelCoords(e.clientX, e.clientY);
-    setHoverPixel(coords);
+    hoverPixelRef.current = coords;
+    requestOverlayRedraw();
 
     if (!isDrawing || !coords || !asset) return;
 
@@ -275,7 +309,8 @@ export const PixelCanvas: React.FC = () => {
   };
 
   const handleMouseLeave = () => {
-    setHoverPixel(null);
+    hoverPixelRef.current = null;
+    requestOverlayRedraw();
     if (!isDrawing) {
       setIsPanning(false);
     }
@@ -330,7 +365,12 @@ export const PixelCanvas: React.FC = () => {
       }
 
       const coords = getCanvasPixelCoords(touch.clientX, touch.clientY);
-      if (!isDrawing || !coords || !asset) return;
+      if (!coords || !asset) return;
+
+      hoverPixelRef.current = coords;
+      requestOverlayRedraw();
+
+      if (!isDrawing) return;
 
       const activeColor = currentTool === 'eraser' ? '' : primaryColor;
 
@@ -390,6 +430,9 @@ export const PixelCanvas: React.FC = () => {
     );
   }
 
+  const targetWidth = asset.width * zoom;
+  const targetHeight = asset.height * zoom;
+
   return (
     <div
       ref={containerRef}
@@ -415,14 +458,26 @@ export const PixelCanvas: React.FC = () => {
 
       {/* Centered Canvas Container with Pan offset */}
       <div
-        className="relative will-change-transform"
+        className="relative will-change-transform flex items-center justify-center"
         style={{
           transform: `translate3d(${panX}px, ${panY}px, 0)`,
+          width: `${targetWidth}px`,
+          height: `${targetHeight}px`,
         }}
       >
+        {/* Base Layer: Checkerboard + Onion Skin + Pixels + Grid */}
         <canvas
           ref={canvasRef}
-          className="shadow-2xl border border-studio-700/60 rounded-sm pixelated"
+          className="absolute inset-0 shadow-2xl border border-studio-700/60 rounded-sm pixelated"
+          style={{
+            imageRendering: 'pixelated',
+          }}
+        />
+
+        {/* Overlay Layer: Hover cursor & live shape previews (rendered via RAF in <0.01ms) */}
+        <canvas
+          ref={overlayCanvasRef}
+          className="absolute inset-0 pointer-events-none pixelated"
           style={{
             imageRendering: 'pixelated',
           }}

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { Play, Pause, RotateCcw, Repeat, StepBack, StepForward, ZoomIn, ZoomOut, X } from 'lucide-react';
 import { useProjectStore } from '../../store/projectStore';
 import { usePlaybackStore } from '../../store/playbackStore';
@@ -16,9 +16,9 @@ export const AnimationPreview: React.FC = () => {
     loop,
     previewZoom,
     pause,
+    play,
     togglePlay,
     setPreviewFrame,
-    stepFrame,
     setCustomFps,
     setLoop,
     setPreviewZoom,
@@ -27,6 +27,14 @@ export const AnimationPreview: React.FC = () => {
   const asset = getActiveAsset();
   const state = getActiveState();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const indicatorRef = useRef<HTMLDivElement | null>(null);
+
+  // Cached 1:1 offscreen canvases for each frame to eliminate GC and per-tick CPU load
+  const cachedFramesRef = useRef<HTMLCanvasElement[]>([]);
+  // Direct frame index tracked across RAF loop
+  const currentFrameIdxRef = useRef<number>(currentPreviewFrame);
+  // RAF handle
+  const rafHandleRef = useRef<number | null>(null);
 
   const fps = customFps !== null ? customFps : (state?.fps || 8);
   const totalFrames = state?.frames.length || 0;
@@ -38,47 +46,117 @@ export const AnimationPreview: React.FC = () => {
     }
   }, [state?.id, state?.loop, setLoop]);
 
-  // Animation playback loop
+  // Keep currentFrameIdxRef in sync when changed externally (e.g. stepFrame or timeline select)
   useEffect(() => {
-    if (!isPlaying || totalFrames <= 1) return;
+    currentFrameIdxRef.current = currentPreviewFrame;
+  }, [currentPreviewFrame]);
 
-    const intervalTime = 1000 / Math.max(1, fps);
-    const timer = setInterval(() => {
-      const { currentPreviewFrame: curr, loop: isLooping } = usePlaybackStore.getState();
-      if (curr >= totalFrames - 1) {
-        if (isLooping) {
-          setPreviewFrame(0);
-        } else {
-          pause();
-        }
-      } else {
-        setPreviewFrame(curr + 1);
+  // Pre-render and cache all animation frames to offscreen canvases
+  useEffect(() => {
+    if (!asset || !state || state.frames.length === 0) {
+      cachedFramesRef.current = [];
+      return;
+    }
+
+    cachedFramesRef.current = state.frames.map((frame) =>
+      renderFrameToCanvas(frame, asset.width, asset.height, 1)
+    );
+  }, [asset?.width, asset?.height, state?.frames]);
+
+  // Direct paint function: Renders cached frame to canvas with zero delay
+  const drawFrame = useCallback(
+    (index: number) => {
+      if (!canvasRef.current || !asset || cachedFramesRef.current.length === 0) return;
+
+      const frameIdx = Math.max(0, Math.min(index, cachedFramesRef.current.length - 1));
+      const offscreen = cachedFramesRef.current[frameIdx];
+      if (!offscreen) return;
+
+      const targetWidth = asset.width * previewZoom;
+      const targetHeight = asset.height * previewZoom;
+      const canvas = canvasRef.current;
+
+      if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
       }
-    }, intervalTime);
 
-    return () => clearInterval(timer);
-  }, [isPlaying, fps, totalFrames, setPreviewFrame, pause]);
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
 
-  // Render preview frame to canvas
+      ctx.clearRect(0, 0, targetWidth, targetHeight);
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(offscreen, 0, 0, targetWidth, targetHeight);
+
+      if (indicatorRef.current) {
+        indicatorRef.current.textContent = `${frameIdx + 1}/${totalFrames}`;
+      }
+    },
+    [asset, previewZoom, totalFrames]
+  );
+
+  // Redraw whenever dimensions, zoom, or active frame changes while paused
   useEffect(() => {
-    if (!canvasRef.current || !asset || !state || totalFrames === 0) return;
+    if (!isPlaying) {
+      drawFrame(currentPreviewFrame);
+    }
+  }, [drawFrame, isPlaying, currentPreviewFrame, previewZoom]);
 
-    const frameIdx = Math.max(0, Math.min(currentPreviewFrame, totalFrames - 1));
-    const frame = state.frames[frameIdx];
-    if (!frame) return;
+  // Hardware-accelerated RAF Playback Loop (Guarantees zero skipped frames & 0% React lag)
+  useEffect(() => {
+    if (!isPlaying || totalFrames <= 1) {
+      if (rafHandleRef.current !== null) {
+        cancelAnimationFrame(rafHandleRef.current);
+        rafHandleRef.current = null;
+      }
+      return;
+    }
 
-    const offscreen = renderFrameToCanvas(frame, asset.width, asset.height, previewZoom);
-    const canvas = canvasRef.current;
-    canvas.width = asset.width * previewZoom;
-    canvas.height = asset.height * previewZoom;
+    let lastSwitchTime = performance.now();
+    let accumulatedTime = 0;
+    const frameInterval = 1000 / Math.max(1, fps);
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    const tick = (currentTime: number) => {
+      const delta = currentTime - lastSwitchTime;
+      lastSwitchTime = currentTime;
+      accumulatedTime += delta;
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(offscreen, 0, 0);
-  }, [asset, state, currentPreviewFrame, previewZoom, totalFrames]);
+      if (accumulatedTime >= frameInterval) {
+        // Step strictly by 1 frame at a time to prevent skipping
+        accumulatedTime %= frameInterval;
+
+        const nextIdx = currentFrameIdxRef.current + 1;
+        if (nextIdx >= totalFrames) {
+          if (loop) {
+            currentFrameIdxRef.current = 0;
+          } else {
+            pause();
+            drawFrame(totalFrames - 1);
+            return;
+          }
+        } else {
+          currentFrameIdxRef.current = nextIdx;
+        }
+
+        drawFrame(currentFrameIdxRef.current);
+      }
+
+      rafHandleRef.current = requestAnimationFrame(tick);
+    };
+
+    // Draw initial active frame immediately
+    drawFrame(currentFrameIdxRef.current);
+    rafHandleRef.current = requestAnimationFrame(tick);
+
+    return () => {
+      if (rafHandleRef.current !== null) {
+        cancelAnimationFrame(rafHandleRef.current);
+        rafHandleRef.current = null;
+      }
+      // Sync last preview frame index back to store
+      setPreviewFrame(currentFrameIdxRef.current);
+    };
+  }, [isPlaying, fps, totalFrames, loop, drawFrame, pause, setPreviewFrame]);
 
   if (!asset || !state) {
     return (
@@ -100,6 +178,21 @@ export const AnimationPreview: React.FC = () => {
     updateAnimationState(asset.id, state.id, { loop: newLoop });
   };
 
+  const handleManualStep = (delta: number) => {
+    if (isPlaying) pause();
+    const next = (currentFrameIdxRef.current + delta + totalFrames) % totalFrames;
+    currentFrameIdxRef.current = next;
+    setPreviewFrame(next);
+    drawFrame(next);
+  };
+
+  const handleRestart = () => {
+    currentFrameIdxRef.current = 0;
+    setPreviewFrame(0);
+    drawFrame(0);
+    if (!isPlaying) play(totalFrames);
+  };
+
   return (
     <div className="bg-studio-900/95 border border-studio-800 rounded-xl p-3 sm:p-3.5 flex flex-col gap-2.5 sm:gap-3 shadow-lg backdrop-blur-sm">
       {/* Title & State Info */}
@@ -112,7 +205,7 @@ export const AnimationPreview: React.FC = () => {
           </span>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <div className="text-[11px] font-mono text-slate-400">
+          <div ref={indicatorRef} className="text-[11px] font-mono text-slate-400">
             {totalFrames > 0 ? `${currentPreviewFrame + 1}/${totalFrames}` : '0/0'}
           </div>
           <button
@@ -161,7 +254,7 @@ export const AnimationPreview: React.FC = () => {
         <div className="flex items-center gap-1">
           <Tooltip content="Step Back Frame" shortcut=",">
             <button
-              onClick={() => stepFrame(-1, totalFrames)}
+              onClick={() => handleManualStep(-1)}
               className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-studio-800 transition-colors"
             >
               <StepBack className="w-4 h-4" />
@@ -183,7 +276,7 @@ export const AnimationPreview: React.FC = () => {
 
           <Tooltip content="Step Forward Frame" shortcut=".">
             <button
-              onClick={() => stepFrame(1, totalFrames)}
+              onClick={() => handleManualStep(1)}
               className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-studio-800 transition-colors"
             >
               <StepForward className="w-4 h-4" />
@@ -192,7 +285,7 @@ export const AnimationPreview: React.FC = () => {
 
           <Tooltip content="Restart From Frame 1">
             <button
-              onClick={() => setPreviewFrame(0)}
+              onClick={handleRestart}
               className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-studio-800 transition-colors"
             >
               <RotateCcw className="w-3.5 h-3.5" />
