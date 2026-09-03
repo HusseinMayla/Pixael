@@ -48,6 +48,31 @@ function StudioWorkspace() {
     };
   }, [isLoaded]);
 
+  // Auto-open sidebars when transitioning to desktop breakpoints
+  useEffect(() => {
+    let wasLg = window.innerWidth >= 1024;
+    let wasXl = window.innerWidth >= 1280;
+
+    const handleResize = () => {
+      const isLg = window.innerWidth >= 1024;
+      const isXl = window.innerWidth >= 1280;
+
+      const store = useEditorStore.getState();
+      if (isLg && (!wasLg || !store.isLeftSidebarOpen)) {
+        store.toggleLeftSidebar(true);
+      }
+      if (isXl && (!wasXl || !store.isRightSidebarOpen)) {
+        store.toggleRightSidebar(true);
+      }
+
+      wasLg = isLg;
+      wasXl = isXl;
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Global Drag & Drop Handler for images and JSON files
   useEffect(() => {
     const handleDragOver = (e: DragEvent) => {

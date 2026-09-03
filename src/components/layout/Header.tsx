@@ -63,11 +63,11 @@ export const Header: React.FC = () => {
     <header className="h-12 sm:h-14 bg-studio-900/95 border-b border-studio-800 px-2 sm:px-4 flex items-center justify-between gap-1.5 sm:gap-4 select-none z-30 shadow-md backdrop-blur-md shrink-0">
       {/* Left: Sidebar Toggle & Brand */}
       <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
-        {/* Mobile/Tablet Left Sidebar Toggle */}
+        {/* Mobile/Desktop Left Sidebar Toggle */}
         <Tooltip content={isLeftSidebarOpen ? 'Close Assets' : 'Open Assets'}>
           <button
             onClick={() => toggleLeftSidebar()}
-            className={`p-1.5 rounded-lg border transition-colors lg:hidden shrink-0 ${
+            className={`p-1.5 rounded-lg border transition-colors shrink-0 ${
               isLeftSidebarOpen
                 ? 'bg-accent-600/20 border-accent-500/40 text-accent-cyan'
                 : 'bg-studio-850 border-studio-750 text-slate-400 hover:text-white'
@@ -224,11 +224,11 @@ export const Header: React.FC = () => {
           </button>
         </Tooltip>
 
-        {/* Mobile/Tablet Right Panel Toggle */}
+        {/* Mobile/Desktop Right Panel Toggle */}
         <Tooltip content={isRightSidebarOpen ? 'Close Preview & Palette' : 'Open Preview & Palette'}>
           <button
             onClick={() => toggleRightSidebar()}
-            className={`p-1.5 rounded-lg border transition-colors xl:hidden ${
+            className={`p-1.5 rounded-lg border transition-colors ${
               isRightSidebarOpen
                 ? 'bg-accent-600/20 border-accent-500/40 text-accent-cyan'
                 : 'bg-studio-850 border-studio-750 text-slate-400 hover:text-white'

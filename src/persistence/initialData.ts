@@ -1,6 +1,5 @@
 import { ProjectData, SpriteAsset, FrameData } from '../types/asset';
 import { generateId } from '../utils/idGenerator';
-import { getSampleKnightSlashAsset } from './sampleImportData';
 
 // Helper to convert ascii matrix or coordinates to flat pixel array
 function createFrameFromAscii(
@@ -724,15 +723,13 @@ export function getInitialProjectData(): ProjectData {
     updatedAt: Date.now() - 20000,
   };
 
-  const knightSlashAsset = getSampleKnightSlashAsset();
-
   return {
     id: generateId('project'),
     name: 'Dungeon Adventure Sprites',
     version: '1.0.0',
-    assets: [knightSlashAsset, knightAsset, slimeAsset, chestAsset],
-    activeAssetId: knightSlashAsset.id,
-    activeStateId: knightSlashAsset.states[0].id,
+    assets: [knightAsset, slimeAsset, chestAsset],
+    activeAssetId: knightAsset.id,
+    activeStateId: knightAsset.states[0].id,
     activeFrameIndex: 0,
     savedAt: Date.now(),
   };
