@@ -3,7 +3,7 @@
 > **Track:** OpenAI WebMCP Challenge (Hackathon MVP)  
 > **Project Name:** Game Asset Studio (SpritesCanvas)  
 > **Live Deployment:** [https://pixael.vercel.app/](https://pixael.vercel.app/)  
-> **Demo Video (YouTube):** [https://youtu.be/PLACEHOLDER_DEMO_VIDEO](https://youtu.be/PLACEHOLDER_DEMO_VIDEO) *(< 3 min)*  
+> **Demo Video (YouTube):** [https://youtu.be/KbLT0nzdLaI](https://youtu.be/KbLT0nzdLaI) *(< 3 min)*  
 > **Repository:** [https://github.com/HusseinMayla/SpritesCanvas](https://github.com/HusseinMayla/SpritesCanvas)  
 > **License:** MIT License  
 

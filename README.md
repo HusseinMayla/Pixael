@@ -11,7 +11,7 @@ Works as a normal editor in any browser. To test the WebMCP layer, open it in Ch
 ### 📚 More docs
 
 - 🏆 [Devpost Submission Narrative](./SUBMISSION_NARRATIVE.md)
-- 🎬 [Demo Video (YouTube Placeholder)](https://youtu.be/PLACEHOLDER_DEMO_VIDEO)
+- 🎬 [Demo Video (YouTube)](https://youtu.be/KbLT0nzdLaI)
 - 🛠️ [Full WebMCP Tool Reference](./WEBMCP_TOOL_REFERENCE.md)
 - 📖 [Technical Architecture](./DOCUMENTATION.md)
 
